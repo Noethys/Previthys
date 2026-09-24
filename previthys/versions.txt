@@ -1,3 +1,7 @@
+Version 1.2.3 (24/09/2026) :
+
+- Correction de la procédure de mise à jour
+
 Version 1.2.2 (24/09/2026) :
 
 - Test de la procédure de mise à jour
