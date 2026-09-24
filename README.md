@@ -1,4 +1,4 @@
-# Previthys - Document unique d'évaluation des risques professionnels
+# Previthys - Gestion du Document unique d'évaluation des risques professionnels
 
 **Previthys** est une application Django autonome pour saisir, suivre et archiver le DUERP d'une collectivité ou d'une association.
 
@@ -13,12 +13,13 @@
 - Droits par groupes Django, visibilité par structure, verrouillage après échecs de connexion, en-têtes de sécurité (CSP)
 - Journal des modifications (qui a créé, modifié ou supprimé quoi, et quand), consultable mais non modifiable, y compris par un administrateur
 
+Installation
 
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py creer_groupes
-python manage.py charger_exemple # optionnel : données d'exemple
-python manage.py createsuperuser
-python manage.py runserver
+* python3 -m venv venv && source venv/bin/activate
+* pip install -r requirements.txt
+* python manage.py migrate
+* python manage.py creer_groupes
+* python manage.py charger_exemple # optionnel : données d'exemple
+* python manage.py createsuperuser
+* python manage.py runserver
 ```
