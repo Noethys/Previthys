@@ -1,0 +1,25 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block titre_page %}Mise à jour de l'application{% endblock %}
+{% block contenu %}
+  <h1 class="h4">Mise à jour de l'application</h1>
+  <p class="text-body-secondary">Version actuellement installée : {{ version_actuelle }}</p>
+  <div class="card card-body">
+    {% if not version_disponible %}
+      <p class="mb-0">✓ Vous disposez de la dernière version.</p>
+      {% if not changelog %}<p class="text-body-secondary small mt-2 mb-0">La vérification des mises à jour n'est pas configurée (variables PREVITHYS_UPDATE_VERSIONS_URL et PREVITHYS_UPDATE_ZIP_URL_TEMPLATE).</p>{% endif %}
+    {% else %}
+      <p>La version {{ version_disponible }} est disponible.</p>
+      <div class="alert alert-warning">Cette opération remplace les fichiers de l'application. Assurez-vous d'avoir une sauvegarde récente de la base de données avant de continuer.</div>
+      <form method="post" id="form_mise_a_jour">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning">Mettre à jour maintenant</button>
+      </form>
+      <label class="form-label mt-3" for="changelog">Notes de version</label>
+      <textarea id="changelog" class="form-control" rows="14" readonly>{{ changelog }}</textarea>
+    {% endif %}
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script src="{% static 'core/mise_a_jour.js' %}"></script>
+{% endblock %}

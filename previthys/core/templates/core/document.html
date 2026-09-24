@@ -1,0 +1,35 @@
+{% extends "core/base.html" %}
+{% block titre_page %}Document unique{% endblock %}
+{% block contenu %}
+  <h1 class="h4">Document unique d'évaluation des risques professionnels{% if version %} - version {{ version.numero }} du {{ version.date|date:"d/m/Y" }}{% endif %}</h1>
+  <p class="text-body-secondary">{{ PREVITHYS_ORGANISATION }}{% if version and version.commentaire %} - {{ version.commentaire }}{% endif %}</p>
+  <p class="d-print-none">
+    <button class="btn btn-primary" type="button" data-imprimer>Imprimer / enregistrer en PDF</button>
+    <a class="btn btn-success" href="{% if version %}{% url 'versions_export' version.pk %}{% else %}{% url 'export_xlsx' %}{% endif %}">Exporter en Excel</a>
+    {% if version %}<a class="btn btn-outline-secondary" href="{% url 'versions_liste' %}">Retour aux versions</a>{% endif %}
+  </p>
+  {% for unite in donnees %}
+    <h2 class="h5 mt-4">{{ unite.nom }} <small class="text-body-secondary">({{ unite.effectif }} agent{{ unite.effectif|pluralize }})</small></h2>
+    {% if unite.description %}<p>{{ unite.description }}</p>{% endif %}
+    <table class="table table-bordered table-sm table-document">
+      <thead><tr><th>Danger</th><th>Catégorie</th><th class="text-center">F × G × M</th><th>Mesures existantes</th><th>Actions prévues</th></tr></thead>
+      <tbody>
+        {% for r in unite.risques %}
+          <tr>
+            <td>{{ r.danger }}{% if r.situation %}<br><small class="text-body-secondary">{{ r.situation }}</small>{% endif %}
+              {% if r.images %}<div class="d-flex flex-wrap gap-1 mt-1">{% for img in r.images %}<img src="{{ img.url }}" alt="{{ img.nom }}" class="photo-risque-impression">{% endfor %}</div>{% endif %}
+            </td>
+            <td>{{ r.categorie }}</td>
+            <td class="text-center text-nowrap niveau-{{ r.niveau }}">{{ r.frequence }} × {{ r.gravite }} × {{ r.maitrise }} = {{ r.cotation }}</td>
+            <td>{{ r.mesures_existantes|linebreaksbr }}{% for m in r.mesures_realisees %}{% if forloop.first and r.mesures_existantes %}<br>{% endif %}{% if not forloop.first %}<br>{% endif %}• {{ m.description }} <small class="text-body-secondary">({% if m.date %}réalisée le {{ m.date }}{% else %}réalisée{% endif %})</small>{% endfor %}</td>
+            <td>{% for a in r.actions %}{{ a.description }} <small>({{ a.statut }}{% if a.echeance %}, {{ a.echeance }}{% endif %})</small>{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-body-secondary">Aucun risque saisi.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% empty %}
+    <p class="text-body-secondary">Aucune unité de travail saisie.</p>
+  {% endfor %}
+{% endblock %}

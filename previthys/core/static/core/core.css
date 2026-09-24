@@ -1,0 +1,44 @@
+/*
+ * -*- coding: utf-8 -*-
+ * Copyright (c) 2026 Ivan LUCAS.
+ * Previthys, application de gestion du DUERP (Document Unique d’Évaluation des Risques Professionnels).
+ * Distribué sous licence GNU GPL.
+ */
+
+body { background: #f4f6f9; }
+/* Bootstrap 5 colore les cellules d'un tableau avec --bs-table-bg : on redéfinit cette variable pour les niveaux de risque */
+.niveau-faible { --bs-table-bg: #28a745; --bs-table-color: #fff; background-color: #28a745; color: #fff; font-weight: 600; }
+.niveau-moyen { --bs-table-bg: #d39e00; --bs-table-color: #fff; background-color: #d39e00; color: #fff; font-weight: 600; }
+.niveau-critique { --bs-table-bg: #dc3545; --bs-table-color: #fff; background-color: #dc3545; color: #fff; font-weight: 600; }
+table.matrice td { border: 2px solid #fff; }
+table.dataTable thead th { text-align: center; }
+table.dataTable th[data-name="id"] { width: 25px; }
+table.dataTable th[data-name="actions"] { width: 200px; }
+table.dataTable td { vertical-align: middle; }
+.dt-buttons-haut { margin-top: 10px; }
+.dataTables_filter input { width: 150px !important; margin-right: 10px; }
+.dataTables_info { color: #999; font-size: 12px; margin-left: 10px; }
+@media print {
+  body { background: #fff; }
+  .navbar, .d-print-none, .btn { display: none !important; }
+  .niveau-faible, .niveau-moyen, .niveau-critique { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+/* Sur petit écran, seul le tableau défile horizontalement (pas toute la page) */
+.dataTables_wrapper .row > .col-sm-12 { overflow-x: auto; }
+.dataTables_wrapper .pagination { flex-wrap: wrap; }
+
+/* Document unique : mêmes largeurs de colonnes sur toutes les unités, pour un alignement visuel d'un tableau à l'autre. */
+table.table-document { table-layout: fixed; width: 100%; }
+table.table-document th, table.table-document td { overflow-wrap: break-word; }
+table.table-document th:nth-child(1), table.table-document td:nth-child(1) { width: 20%; }
+table.table-document th:nth-child(2), table.table-document td:nth-child(2) { width: 12%; }
+table.table-document th:nth-child(3), table.table-document td:nth-child(3) { width: 13%; }
+table.table-document th:nth-child(4), table.table-document td:nth-child(4) { width: 27.5%; }
+table.table-document th:nth-child(5), table.table-document td:nth-child(5) { width: 27.5%; }
+
+/* Vignette des pièces jointes de type image, dans le formulaire de modification d'un risque. */
+.piece-jointe-vignette { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; border: 1px solid var(--bs-border-color); cursor: zoom-in; }
+#pj-apercu .modal-body img { max-height: 75vh; }
+
+/* Photos jointes à un risque, affichées et imprimées dans le document unique, à une taille raisonnable. */
+.photo-risque-impression { width: 90px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid var(--bs-border-color); }

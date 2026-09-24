@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+{% block titre_page %}{{ titre }}{% endblock %}
+{% block contenu %}
+  <h1 class="h4">{{ titre }}</h1>
+  {% if description %}<p class="text-body-secondary">{{ description }}</p>{% endif %}
+  <div class="card card-body">
+    <form method="post" novalidate{% if form.is_multipart %} enctype="multipart/form-data"{% endif %}>
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+        <div class="row mb-3">
+          <label class="col-md-3 col-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+          <div class="col-md-7">
+            {{ field }}
+            {% if field.help_text %}<small class="form-text text-body-secondary">{{ field.help_text }}</small>{% endif %}
+            {% for erreur in field.errors %}<div class="text-danger small">{{ erreur }}</div>{% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+      <div class="row"><div class="col-md-7 offset-md-3">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        {% if avec_ajouter %}<button type="submit" name="enregistrer_ajouter" value="1" class="btn btn-outline-primary">Enregistrer et ajouter</button>{% endif %}
+        <a class="btn btn-danger" href="{{ url_liste }}">Annuler</a>
+      </div></div>
+    </form>
+
+    {% if pieces_jointes is not None %}
+      <hr>
+      <h2 class="h6">Fichiers joints</h2>
+      {% if pieces_jointes %}
+        <ul class="list-group mb-0">
+          {% for piece in pieces_jointes %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span class="d-flex align-items-center gap-2">
+                {% if piece.est_image %}
+                  <button type="button" class="btn p-0 border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#pj-apercu" data-pj-src="{% url 'pieces_jointes_telecharger' piece.pk %}" data-pj-nom="{{ piece.nom_original }}" aria-label="Aperçu de {{ piece.nom_original }}">
+                    <img src="{% url 'pieces_jointes_telecharger' piece.pk %}" alt="" class="piece-jointe-vignette">
+                  </button>
+                {% endif %}
+                <span>
+                  <a href="{% url 'pieces_jointes_telecharger' piece.pk %}"{% if not piece.est_image %} target="_blank" rel="noopener"{% endif %}>{{ piece.nom_original }}</a><br>
+                  <small class="text-body-secondary">{{ piece.taille|filesizeformat }}, ajouté le {{ piece.ajoute_le|date:"d/m/Y" }}{% if piece.ajoute_par %} par {{ piece.ajoute_par.get_full_name|default:piece.ajoute_par.get_username }}{% endif %}</small>
+                </span>
+              </span>
+              <form method="post" action="{% url 'pieces_jointes_supprimer' piece.pk %}" class="mb-0" data-confirmer="Supprimer ce fichier ?">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="modal fade" id="pj-apercu" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h2 class="modal-title h6 mb-0"></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+              </div>
+              <div class="modal-body text-center">
+                <img src="" alt="" class="img-fluid">
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-body-secondary mb-0">Aucun fichier joint.</p>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}

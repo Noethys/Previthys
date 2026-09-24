@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block titre_page %}{{ titre }}{% endblock %}
+{% block styles %}
+  <link rel="stylesheet" href="{% static 'core/vendor/dataTables.bootstrap5.min.css' %}">
+  <link rel="stylesheet" href="{% static 'core/vendor/buttons.bootstrap5.min.css' %}">
+{% endblock %}
+{% block contenu %}
+  <div class="d-flex justify-content-between align-items-start flex-wrap">
+    <div>
+      <h1 class="h4">{{ titre }}</h1>
+      {% if description %}<p class="text-body-secondary">{{ description }}</p>{% endif %}
+    </div>
+    {% if url_ajouter %}<a class="btn btn-success mb-2" href="{{ url_ajouter }}">{{ libelle_ajouter }}</a>{% endif %}
+  </div>
+  <div class="card card-body">
+    <table id="dt_{{ nom_liste }}" class="display datatable table table-striped table-bordered" style="width:100%"
+           data-liste="{{ nom_liste }}" data-ordre="{{ ordre }}" data-titre="{{ PREVITHYS_ORGANISATION }} - {{ titre }}" data-vide="{{ vide }}">
+      <thead>
+        <tr>
+          {% for c in colonnes %}<th data-name="{{ c|slugify }}">{{ c }}</th>{% endfor %}
+          {% if colonne_actions %}<th data-name="actions" class="noorder noexport">Actions</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in lignes %}
+          <tr>
+            {% for c in l.cellules %}<td{% if c.ordre is not None %} data-order="{{ c.ordre }}"{% endif %}>{{ c.html }}</td>{% endfor %}
+            {% if colonne_actions %}
+              <td class="text-nowrap">
+                {% for libelle, url in l.supplementaires %}<a class="btn btn-sm btn-outline-secondary" href="{{ url }}">{{ libelle }}</a>{% endfor %}
+                {% if l.modifier %}<a class="btn btn-sm btn-outline-secondary" href="{{ l.modifier }}">Modifier</a>{% endif %}
+                {% if l.supprimer %}<a class="btn btn-sm btn-outline-danger" href="{{ l.supprimer }}">Supprimer</a>{% endif %}
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script src="{% static 'core/vendor/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'core/vendor/dataTables.bootstrap5.min.js' %}"></script>
+  <script src="{% static 'core/vendor/dataTables.buttons.min.js' %}"></script>
+  <script src="{% static 'core/vendor/buttons.bootstrap5.min.js' %}"></script>
+  <script src="{% static 'core/vendor/jszip.min.js' %}"></script>
+  <script src="{% static 'core/vendor/buttons.html5.min.js' %}"></script>
+  <script src="{% static 'core/vendor/buttons.colVis.min.js' %}"></script>
+  <script src="{% static 'core/vendor/buttons.print.min.js' %}"></script>
+  <script src="{% static 'core/listes.js' %}"></script>
+{% endblock %}

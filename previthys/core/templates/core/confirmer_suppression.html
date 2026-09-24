@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+{% block titre_page %}{{ titre }}{% endblock %}
+{% block contenu %}
+  <h1 class="h4">{{ titre }}</h1>
+  <div class="card card-body">
+    {% if bloquants %}
+      <div class="alert alert-danger mb-3">Suppression impossible : « {{ object }} » est utilisé par {{ bloquants|join:", " }}. Modifiez ou supprimez d'abord ces éléments.</div>
+      <div><a class="btn btn-secondary" href="{{ url_liste }}">Retour à la liste</a></div>
+    {% else %}
+      <p>Voulez-vous vraiment supprimer « {{ object }} » ?</p>
+      {% if dependances %}
+        <div class="alert alert-warning">Seront également supprimés :
+          <ul class="mb-0">{% for nom, n in dependances %}<li>{{ n }} {{ nom }}</li>{% endfor %}</ul>
+        </div>
+      {% endif %}
+      <form method="post">{% csrf_token %}
+        <button type="submit" class="btn btn-danger">Supprimer</button>
+        <a class="btn btn-secondary" href="{{ url_liste }}">Annuler</a>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre_page %}Previthys{% endblock %} - {{ PREVITHYS_ORGANISATION }}</title>
+  <link rel="stylesheet" href="{% static 'core/vendor/bootstrap.min.css' %}">
+  {% block styles %}{% endblock %}
+  <link rel="stylesheet" href="{% static 'core/core.css' %}">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-dark d-print-none" data-bs-theme="dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{% url 'dashboard' %}">Previthys <small class="text-secondary">{{ PREVITHYS_ORGANISATION }}</small></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Afficher le menu"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="menu">
+      {% if user.is_authenticated %}
+      <ul class="navbar-nav me-auto">
+        {% if perms.core.view_risque %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Vue d'ensemble</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Évaluation</a>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="{% url 'unites_liste' %}">Unités de travail</a>
+            <a class="dropdown-item" href="{% url 'risques_liste' %}">Risques</a>
+            <a class="dropdown-item" href="{% url 'categories_liste' %}">Catégories de risques</a>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Prévention</a>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="{% url 'actions_liste' %}">Plan d'actions</a>
+            <a class="dropdown-item" href="{% url 'versions_liste' %}">Versions archivées</a>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Document</a>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="{% url 'document' %}">Document unique (impression)</a>
+            <a class="dropdown-item" href="{% url 'export_xlsx' %}">Exporter en Excel (XLSX)</a>
+          </div>
+        </li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav">
+        {% if user.is_staff %}<li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">Administration</a></li>{% endif %}
+      {% if user.is_superuser %}<li class="nav-item"><a class="nav-link" href="{% url 'mise_a_jour' %}">Mise à jour</a></li>{% endif %}
+      {% if perms.core.view_journalaudit %}<li class="nav-item"><a class="nav-link" href="{% url 'journal_liste' %}">Journal</a></li>{% endif %}
+        <li class="nav-item">
+          <form method="post" action="{% url 'logout' %}" class="d-flex">{% csrf_token %}
+            <button class="btn btn-link nav-link" type="submit">Déconnexion ({{ user.get_full_name|default:user.get_username }})</button>
+          </form>
+        </li>
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<main class="container-fluid py-3">
+  {% for message in messages %}
+    <div class="alert alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag|default:'info' }}{% endif %} alert-dismissible fade show d-print-none" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+  {% endfor %}
+  {% block contenu %}{% endblock %}
+</main>
+
+<script src="{% static 'core/vendor/jquery.min.js' %}"></script>
+<script src="{% static 'core/vendor/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'core/app.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

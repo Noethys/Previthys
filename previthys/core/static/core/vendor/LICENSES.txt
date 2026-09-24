@@ -1,0 +1,5 @@
+Bibliothèques front embarquées (licence MIT) :
+- Bootstrap 5.3.8 (getbootstrap.com), avec Popper
+- jQuery 3.7.1 (jquery.com)
+- DataTables 1.13.11 et Buttons 2.4.3 (export HTML5/Excel inclus), intégration Bootstrap 5 (datatables.net)
+- JSZip 3.10.1 (stuk.github.io/jszip) : génération du fichier .xlsx par le bouton Excel des listes

@@ -1,0 +1,94 @@
+{% extends "core/base.html" %}
+{% block titre_page %}Vue d'ensemble{% endblock %}
+{% block contenu %}
+  <div class="d-flex justify-content-between align-items-start flex-wrap">
+    <div>
+      <h1 class="h4">Vue d'ensemble</h1>
+      <p class="text-body-secondary">Document unique d'évaluation des risques professionnels</p>
+    </div>
+    <a class="btn btn-success mb-2" href="{% url 'export_xlsx' %}">Exporter en Excel</a>
+  </div>
+
+  {% if nouvelle_version %}
+    <div class="alert alert-warning alert-dismissible fade show">
+      La version {{ nouvelle_version }} de l'application est disponible. <a href="{% url 'mise_a_jour' %}" class="alert-link">Cliquez ici pour l'installer</a>.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+  {% endif %}
+  {% if mise_a_jour_ancienne %}
+    <div class="alert alert-warning">La dernière version archivée date de plus d'un an. Le DUERP doit être mis à jour au moins une fois par an.</div>
+  {% elif not derniere_version %}
+    <div class="alert alert-info">Aucune version archivée pour l'instant.</div>
+  {% endif %}
+
+  <div class="row mb-3">
+    <div class="col-md-4"><div class="card text-bg-primary"><div class="card-body"><div class="h2 mb-0">{{ nbre_unites }}</div>Unités de travail</div></div></div>
+    <div class="col-md-4"><div class="card text-bg-secondary"><div class="card-body"><div class="h2 mb-0">{{ nbre_risques }}</div>Risques évalués</div></div></div>
+    <div class="col-md-4"><div class="card {% if nbre_critiques %}text-bg-danger{% else %}text-bg-success{% endif %}"><div class="card-body"><div class="h2 mb-0">{{ nbre_critiques }}</div>Risques critiques</div></div></div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-5 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Répartition des risques par niveau</h2>
+        {% for n in repartition %}
+          <div class="d-flex justify-content-between small mb-1"><span>{{ n.libelle }}</span><span>{{ n.n }}</span></div>
+          <div class="progress mb-2" role="progressbar" aria-label="{{ n.libelle }}" aria-valuenow="{{ n.pourcentage }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar niveau-{{ n.code }}" style="width: {{ n.pourcentage }}%">{% if n.n %}{{ n.pourcentage }}%{% endif %}</div>
+          </div>
+        {% endfor %}
+        <small class="text-body-secondary">Cotation = fréquence × gravité × maîtrise. Faible jusqu'à 40, moyen de 41 à 196, critique à partir de 280.</small>
+      </div></div>
+    </div>
+    <div class="col-lg-7 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Actions à suivre</h2>
+        <table class="table table-sm">
+          {% for a in actions_en_retard %}
+            <tr><td>{{ a.description|truncatechars:70 }}<br><small class="text-body-secondary">{{ a.risque.unite.nom }}</small></td><td><span class="badge text-bg-danger">En retard</span></td><td>{{ a.echeance|date:"d/m/Y" }}</td></tr>
+          {% endfor %}
+          {% for a in actions_a_venir %}
+            <tr><td>{{ a.description|truncatechars:70 }}<br><small class="text-body-secondary">{{ a.risque.unite.nom }}</small></td><td>{{ a.get_statut_display }}</td><td>{{ a.echeance|date:"d/m/Y" }}</td></tr>
+          {% empty %}
+            {% if not actions_en_retard %}<tr><td class="text-body-secondary">Aucune action en cours.</td></tr>{% endif %}
+          {% endfor %}
+        </table>
+        {% if perms.core.add_actionprevention %}<a class="btn btn-success btn-sm" href="{% url 'actions_ajouter' %}">Ajouter une action</a>{% endif %}
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Risques les plus critiques</h2>
+        <table class="table table-sm mb-0">
+          {% for r in top_risques %}
+            <tr>
+              <td>
+                {% if perms.core.change_risque %}<a href="{% url 'risques_modifier' r.pk %}">{{ r.danger|truncatechars:60 }}</a>{% else %}{{ r.danger|truncatechars:60 }}{% endif %}
+                <br><small class="text-body-secondary">{{ r.unite.nom }}</small>
+              </td>
+              <td class="text-end"><span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% elif r.niveau == 'moyen' %}warning{% else %}success{% endif %}">{{ r.niveau|capfirst }} ({{ r.cotation }})</span></td>
+            </tr>
+          {% empty %}
+            <tr><td class="text-body-secondary">Aucun risque saisi.</td></tr>
+          {% endfor %}
+        </table>
+      </div></div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Répartition par catégorie de risque</h2>
+        {% for c in repartition_categories %}
+          <div class="d-flex justify-content-between small mb-1"><span>{{ c.libelle }}</span><span>{{ c.n }}</span></div>
+          <div class="progress mb-2" role="progressbar" aria-label="{{ c.libelle }}" aria-valuenow="{{ c.pourcentage }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar bg-secondary" style="width: {{ c.pourcentage }}%">{% if c.n %}{{ c.pourcentage }}%{% endif %}</div>
+          </div>
+        {% empty %}
+          <p class="text-body-secondary mb-0">Aucun risque saisi.</p>
+        {% endfor %}
+      </div></div>
+    </div>
+  </div>
+{% endblock %}

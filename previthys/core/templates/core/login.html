@@ -1,0 +1,16 @@
+{% extends "core/base.html" %}
+{% block titre_page %}Connexion{% endblock %}
+{% block contenu %}
+  <div class="row justify-content-center"><div class="col-md-5 col-lg-4">
+    <div class="card card-body">
+      <h1 class="h4">Connexion</h1>
+      <form method="post">{% csrf_token %}
+        {% if form.errors %}<div class="alert alert-danger">Identifiant ou mot de passe incorrect.</div>{% endif %}
+        <div class="mb-3"><label class="form-label" for="id_username">Identifiant</label><input type="text" name="username" id="id_username" class="form-control" autofocus autocomplete="username" required></div>
+        <div class="mb-3"><label class="form-label" for="id_password">Mot de passe</label><input type="password" name="password" id="id_password" class="form-control" autocomplete="current-password" required></div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+      </form>
+    </div>
+  </div></div>
+{% endblock %}

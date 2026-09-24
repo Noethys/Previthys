@@ -1,0 +1,11 @@
+{% extends "core/base.html" %}
+{% block titre_page %}Compte temporairement verrouillé{% endblock %}
+{% block contenu %}
+  <div class="row justify-content-center"><div class="col-md-6">
+    <div class="card card-body">
+      <h1 class="h4">Compte temporairement verrouillé</h1>
+      <div class="alert alert-danger mb-3">Trop de tentatives de connexion ont échoué. Ce compte est verrouillé depuis cette adresse pendant {{ cooloff_time|default:"quelques minutes" }}. Réessayez plus tard ou contactez un administrateur.</div>
+      <a class="btn btn-secondary" href="{% url 'login' %}">Retour à la connexion</a>
+    </div>
+  </div></div>
+{% endblock %}
