@@ -21,5 +21,6 @@ Installation
 * python manage.py creer_groupes
 * python manage.py charger_exemple # optionnel : données d'exemple
 * python manage.py createsuperuser
+* python manage.py collectstatic
 * python manage.py runserver
 ```
