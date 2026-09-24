@@ -26,7 +26,8 @@ TAILLE_MAX_OCTETS = 200 * 1024 * 1024   # 200 Mo : au-delà, l'archive est refus
 DELAI_RESEAU = 15                        # secondes
 
 # Jamais écrasés par une mise à jour, quel que soit leur contenu dans l'archive téléchargée.
-CHEMINS_PROTEGES = ("db.sqlite3", ".env", ".demo_password", "venv/", "staticfiles/", ".git/")
+CHEMINS_PROTEGES = ("db.sqlite3", ".env", ".demo_password", "venv/", "static/", "staticfiles/", "media/", ".git/",
+                    "debug.log", "previthys/settings_production.py")
 
 
 def _url_valide(url):
@@ -107,9 +108,22 @@ def _extraire(chemin_zip, base_dir):
         if len(premiers) == 1:
             prefixe = premiers.pop() + "/"
 
+        # Archive GitHub : le projet Django (manage.py) est dans un sous-dossier (« previthys/ »). On le retire aussi et
+        # on ignore ce qui se trouve au-dessus (README, LICENSE...), qui n'appartient pas à BASE_DIR.
+        sous_dossier = ""
+        for nom in noms:
+            relatif = nom[len(prefixe):] if prefixe and nom.startswith(prefixe) else nom
+            if relatif.count("/") == 1 and relatif.endswith("/manage.py"):
+                sous_dossier = relatif[:-len("manage.py")]
+                break
+
         ignores, ecrits = [], 0
         for nom in noms:
             relatif = nom[len(prefixe):] if prefixe and nom.startswith(prefixe) else nom
+            if sous_dossier:
+                if not relatif.startswith(sous_dossier):
+                    continue
+                relatif = relatif[len(sous_dossier):]
             if not relatif or nom.endswith("/"):
                 continue
             if _chemin_protege(relatif):

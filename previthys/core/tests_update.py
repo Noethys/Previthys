@@ -155,6 +155,25 @@ class ExtractionTests(TestCase):
 
 @override_settings(PREVITHYS_UPDATE_VERSIONS_URL="https://exemple.fr/versions.txt", PREVITHYS_UPDATE_ZIP_URL_TEMPLATE="https://exemple.fr/{version}.zip")
 class UpdateCompletTests(TestCase):
+    def test_archive_github_avec_sous_dossier_projet(self):
+        """Archive GitHub « Previthys-x.y.z/previthys/... » : les fichiers doivent arriver dans BASE_DIR, pas dessous."""
+        import shutil
+        import tempfile
+        base_dir = tempfile.mkdtemp(prefix="duerp_test_github_")
+        try:
+            z = zip_en_memoire({"Previthys-2.0.0/README.md": b"r", "Previthys-2.0.0/previthys/manage.py": b"m",
+                                "Previthys-2.0.0/previthys/versions.txt": b"Version 2.0.0 (x) :",
+                                "Previthys-2.0.0/previthys/core/models.py": b"# v2"})
+            chemin_zip = os.path.join(base_dir, "_test.zip")
+            open(chemin_zip, "wb").write(z)
+            mod_update._extraire(chemin_zip, base_dir)
+            self.assertEqual(open(os.path.join(base_dir, "core", "models.py")).read(), "# v2")
+            self.assertTrue(open(os.path.join(base_dir, "versions.txt")).read().startswith("Version 2.0.0"))
+            self.assertFalse(os.path.exists(os.path.join(base_dir, "previthys", "core")))
+            self.assertFalse(os.path.exists(os.path.join(base_dir, "README.md")))
+        finally:
+            shutil.rmtree(base_dir, ignore_errors=True)
+
     def setUp(self):
         cache.clear()
 
@@ -170,6 +189,8 @@ class UpdateCompletTests(TestCase):
             return reponse_http(changelog if url.endswith("versions.txt") else archive)
 
         faux_base_dir = tempfile.mkdtemp(prefix="duerp_test_update_")
+        with open(os.path.join(faux_base_dir, "versions.txt"), "w", encoding="utf-8") as f:
+            f.write("Version 0.0.1 (01/01/2020) :\n")
         try:
             with override_settings(BASE_DIR=faux_base_dir), \
                  mock.patch("urllib.request.urlopen", side_effect=fausse_reponse), \
