@@ -1,12 +1,6 @@
-Version 1.2.1 (23/09/2026) :
+Version 1.2.1 (24/09/2026) :
 
-- Renommage du dossier de configuration du projet duerp_site/ en previthys/
-- Renommage du fichier VERSION.txt en versions.txt
-
-Version 1.2.0 (23/09/2026) :
-
-- Renommage de l'application en « Previthys » (marque, variables d'environnement PREVITHYS_*, groupes de droits)
-- Renommage du dossier applicatif duerp/ en core/ (imports, permissions, migrations, gabarits, fichiers statiques)
+- Mise en ligne du code source
 
 Version 1.1.0 (23/09/2026) :
 
@@ -17,7 +11,7 @@ Version 1.1.0 (23/09/2026) :
 - Tableau de bord : widgets « Risques les plus critiques » et « Répartition par catégorie de risque »
 - Export Excel des listes (bouton dédié dans chaque écran, en plus de l'export complet avec formules)
 - Mise à jour de l'application en un clic (super-utilisateurs)
-- Passage à Bootstrap 5 et durcissement de la sécurité (voir SECURITE.md)
+- Passage à Bootstrap 5 et durcissement de la sécurité
 
 Version 1.0.0 (21/09/2026) :
 
