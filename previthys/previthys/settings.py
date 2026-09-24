@@ -140,12 +140,53 @@ AXES_RESET_ON_SUCCESS = True
 AXES_HTTP_RESPONSE_CODE = 429
 AXES_LOCKOUT_TEMPLATE = "core/verrouille.html"
 
+
+# Logging
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "loggers": {
-        "django.security": {"handlers": ["console"], "level": "WARNING"},
-        "axes": {"handlers": ["console"], "level": "WARNING"},
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'complet': {
+            'format': '[{levelname} {asctime} {module}]  {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'complet',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'complet',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'backupCount': 10,
+            'maxBytes': 20971520, # 20*1024*1024 bytes (20MB)
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True,
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file', 'mail_admins'],
+        'level': 'DEBUG',
     },
 }
