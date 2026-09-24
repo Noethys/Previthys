@@ -13,7 +13,7 @@ Réservée aux super-utilisateurs (voir core/views/mise_a_jour.py).
 #  Previthys, application de gestion du DUERP (Document Unique d’Évaluation des Risques Professionnels).
 #  Distribué sous licence GNU GPL.
 
-import logging, os, shutil, tempfile, urllib.error, urllib.request, zipfile
+import logging, os, tempfile, urllib.error, urllib.request, zipfile
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management import call_command
@@ -98,45 +98,35 @@ def _chemin_sur(base_dir, chemin_relatif):
     return cible
 
 
-def _extraire(chemin_zip, base_dir):
-    """Déploie l'archive par-dessus base_dir : ignore les chemins protégés et ceux qui sortiraient de base_dir."""
-    with zipfile.ZipFile(chemin_zip) as archive:
-        noms = archive.namelist()
-        # L'archive contient un unique dossier racine (ex. "core-1.1.0/") : on le retire.
-        prefixe = ""
-        premiers = {n.split("/", 1)[0] for n in noms if n}
-        if len(premiers) == 1:
-            prefixe = premiers.pop() + "/"
-
-        # Archive GitHub : le projet Django (manage.py) est dans un sous-dossier (« previthys/ »). On le retire aussi et
-        # on ignore ce qui se trouve au-dessus (README, LICENSE...), qui n'appartient pas à BASE_DIR.
-        sous_dossier = ""
-        for nom in noms:
-            relatif = nom[len(prefixe):] if prefixe and nom.startswith(prefixe) else nom
-            if relatif.count("/") == 1 and relatif.endswith("/manage.py"):
-                sous_dossier = relatif[:-len("manage.py")]
-                break
+def _extraire(chemin_zip, base_dir, version):
+    with zipfile.ZipFile(chemin_zip) as zfile:
+        liste_fichiers = zfile.namelist()
+        prefixe = "Previthys-%s/previthys/" % version
+        chemin_dest = os.path.join(settings.BASE_DIR, "")
 
         ignores, ecrits = [], 0
-        for nom in noms:
-            relatif = nom[len(prefixe):] if prefixe and nom.startswith(prefixe) else nom
-            if sous_dossier:
-                if not relatif.startswith(sous_dossier):
-                    continue
-                relatif = relatif[len(sous_dossier):]
-            if not relatif or nom.endswith("/"):
-                continue
-            if _chemin_protege(relatif):
-                ignores.append(relatif)
-                continue
-            destination = _chemin_sur(base_dir, relatif)
-            if destination is None:
-                logger.warning("Entrée d'archive suspecte ignorée (hors du dossier de l'application) : %s", nom)
-                continue
-            os.makedirs(os.path.dirname(destination), exist_ok=True)
-            with archive.open(nom) as source, open(destination, "wb") as sortie:
-                shutil.copyfileobj(source, sortie)
-            ecrits += 1
+        for i in liste_fichiers:
+            d = i.replace(prefixe, "")
+            if len(d) > 1 and not d.startswith("Previthys-%s" % version):
+                if i.endswith('/'):
+                    try:
+                        os.makedirs(os.path.join(chemin_dest, d))
+                    except:
+                        pass
+                else:
+                    try:
+                        os.makedirs(os.path.join(chemin_dest, os.path.dirname(d)))
+                    except:
+                        pass
+                    nom_fichier_temp = os.path.join(chemin_dest, d)
+                    if os.path.isdir(nom_fichier_temp):
+                        os.rmdir(nom_fichier_temp)
+                    data = zfile.read(i)
+                    fp = open(nom_fichier_temp, "wb")
+                    fp.write(data)
+                    fp.close()
+                    ecrits += 1
+
     return ecrits, ignores
 
 
@@ -169,8 +159,8 @@ def Update():
             logger.error("Le fichier téléchargé n'est pas une archive valide.")
             return False
         try:
-            ecrits, ignores = _extraire(chemin_zip, str(settings.BASE_DIR))
-        except (zipfile.BadZipFile, OSError) as err:
+            ecrits, ignores = _extraire(chemin_zip, str(settings.BASE_DIR), version_disponible)
+        except (zipfile.BadZipFile, OSError, ValueError) as err:
             logger.error("L'installation a échoué : %s", err)
             return False
 

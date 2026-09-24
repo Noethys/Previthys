@@ -120,11 +120,11 @@ class ExtractionTests(TestCase):
         shutil.rmtree(self.base_dir, ignore_errors=True)
 
     def test_fichier_normal_est_ecrit(self):
-        z = zip_en_memoire({"appli-1.1.0/core/models.py": b"# nouveau contenu"})
+        z = zip_en_memoire({"appli-1.1.0/previthys/manage.py": b"m", "appli-1.1.0/previthys/core/models.py": b"# nouveau contenu"})
         chemin_zip = os.path.join(self.base_dir, "_test.zip")
         open(chemin_zip, "wb").write(z)
         ecrits, ignores = mod_update._extraire(chemin_zip, self.base_dir)
-        self.assertEqual(ecrits, 1)
+        self.assertEqual(ecrits, 2)
         self.assertEqual(open(os.path.join(self.base_dir, "core", "models.py")).read(), "# nouveau contenu")
 
     def test_zip_slip_est_bloque(self):
@@ -132,25 +132,55 @@ class ExtractionTests(TestCase):
         cible_hors_projet = os.path.join(os.path.dirname(self.base_dir), "fichier_pirate.txt")
         if os.path.exists(cible_hors_projet):
             os.remove(cible_hors_projet)
-        z = zip_en_memoire({"appli-1.1.0/../../fichier_pirate.txt": b"pirate"})
+        z = zip_en_memoire({"appli-1.1.0/previthys/manage.py": b"m", "appli-1.1.0/previthys/../../../fichier_pirate.txt": b"pirate"})
         chemin_zip = os.path.join(self.base_dir, "_test.zip")
         open(chemin_zip, "wb").write(z)
         mod_update._extraire(chemin_zip, self.base_dir)
         self.assertFalse(os.path.exists(cible_hors_projet), "une entrée d'archive a écrit hors du dossier de l'application")
 
     def test_base_de_donnees_jamais_ecrasee(self):
-        z = zip_en_memoire({"appli-1.1.0/db.sqlite3": b"BASE PIRATE"})
+        z = zip_en_memoire({"appli-1.1.0/previthys/manage.py": b"m", "appli-1.1.0/previthys/db.sqlite3": b"BASE PIRATE"})
         chemin_zip = os.path.join(self.base_dir, "_test.zip")
         open(chemin_zip, "wb").write(z)
         mod_update._extraire(chemin_zip, self.base_dir)
         self.assertEqual(open(os.path.join(self.base_dir, "db.sqlite3")).read(), "NE JAMAIS ECRASER")
 
-    def test_archive_sans_dossier_racine_unique(self):
-        z = zip_en_memoire({"core/models.py": b"a", "previthys/settings.py": b"b"})
+    def _ecrits(self):
+        return sorted(os.path.relpath(os.path.join(r, f), self.base_dir).replace(os.sep, "/")
+                      for r, _, fs in os.walk(self.base_dir) for f in fs if f not in ("_test.zip", "db.sqlite3"))
+
+    def _extraire(self, fichiers):
         chemin_zip = os.path.join(self.base_dir, "_test.zip")
-        open(chemin_zip, "wb").write(z)
-        ecrits, _ = mod_update._extraire(chemin_zip, self.base_dir)
+        open(chemin_zip, "wb").write(zip_en_memoire(fichiers))
+        return mod_update._extraire(chemin_zip, self.base_dir)
+
+    def test_archive_sans_dossier_racine_unique(self):
+        ecrits, _ = self._extraire({"previthys/manage.py": b"m", "previthys/core/models.py": b"a", "README.md": b"r"})
         self.assertEqual(ecrits, 2)
+        self.assertEqual(self._ecrits(), ["core/models.py", "manage.py"])
+
+    def test_seul_le_dossier_previthys_est_installe(self):
+        """README, LICENSE, requirements.txt et tout autre dossier du dépôt ne sont jamais copiés."""
+        self._extraire({"P-1.2.3/README.md": b"", "P-1.2.3/LICENSE": b"", "P-1.2.3/requirements.txt": b"",
+                        "P-1.2.3/docs/guide.md": b"", "P-1.2.3/previthys/manage.py": b"",
+                        "P-1.2.3/previthys/versions.txt": b"", "P-1.2.3/previthys/core/models.py": b"",
+                        "P-1.2.3/previthys/previthys/settings.py": b""})
+        self.assertEqual(self._ecrits(), ["core/models.py", "manage.py", "previthys/settings.py", "versions.txt"])
+
+    def test_archive_sans_manage_py_refusee_et_rien_ecrit(self):
+        with self.assertRaises(ValueError):
+            self._extraire({"P-1.2.3/README.md": b"", "P-1.2.3/previthys/core/models.py": b""})
+        self.assertEqual(self._ecrits(), [])
+
+    def test_autre_dossier_avec_manage_py_ignore(self):
+        self._extraire({"P-1.2.3/outils/manage.py": b"", "P-1.2.3/outils/x.py": b"",
+                        "P-1.2.3/previthys/manage.py": b"", "P-1.2.3/previthys/core/models.py": b""})
+        self.assertEqual(self._ecrits(), ["core/models.py", "manage.py"])
+
+    def test_fichiers_proteges_jamais_ecrases(self):
+        self._extraire({"P-1.2.3/previthys/manage.py": b"", "P-1.2.3/previthys/media/photo.jpg": b"",
+                        "P-1.2.3/previthys/previthys/settings_production.py": b"", "P-1.2.3/previthys/debug.log": b""})
+        self.assertEqual(self._ecrits(), ["manage.py"])
 
 
 @override_settings(PREVITHYS_UPDATE_VERSIONS_URL="https://exemple.fr/versions.txt", PREVITHYS_UPDATE_ZIP_URL_TEMPLATE="https://exemple.fr/{version}.zip")
@@ -183,7 +213,7 @@ class UpdateCompletTests(TestCase):
         import tempfile
         majeure = int(GetVersion().split(".")[0]) + 1
         changelog = ("Version %d.0.0 (01/01/2027) :\n\n- Test" % majeure).encode()
-        archive = zip_en_memoire({"appli/versions.txt": ("Version %d.0.0 (01/01/2027) :\n" % majeure).encode()})
+        archive = zip_en_memoire({"appli/previthys/manage.py": b"m", "appli/previthys/versions.txt": ("Version %d.0.0 (01/01/2027) :\n" % majeure).encode()})
 
         def fausse_reponse(url, timeout=None):
             return reponse_http(changelog if url.endswith("versions.txt") else archive)
