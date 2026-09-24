@@ -13,14 +13,7 @@ Réservée aux super-utilisateurs (voir core/views/mise_a_jour.py).
 #  Previthys, application de gestion du DUERP (Document Unique d’Évaluation des Risques Professionnels).
 #  Distribué sous licence GNU GPL.
 
-import logging
-import os
-import shutil
-import tempfile
-import urllib.error
-import urllib.request
-import zipfile
-
+import logging, os, shutil, tempfile, urllib.error, urllib.request, zipfile
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management import call_command
@@ -194,7 +187,7 @@ def _signaler_redemarrage():
     Sans effet avec gunicorn ou uwsgi : ces serveurs doivent être redémarrés manuellement ou par un
     gestionnaire de processus (systemd, supervisor) après une mise à jour. Voir le README.
     """
-    chemin_wsgi = settings.BASE_DIR / "previthys" / "wsgi.py"
+    chemin_wsgi = os.path.join(settings.BASE_DIR, "previthys", "wsgi.py")
     try:
         os.utime(chemin_wsgi, None)
     except OSError as err:
