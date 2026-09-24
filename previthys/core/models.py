@@ -20,14 +20,12 @@ MAITRISE = [(1, "1 - Maîtrisé (mesures en place et efficaces)"), (4, "4 - Moye
             (7, "7 - Peu maîtrisé (mesures insuffisantes)"), (10, "10 - Non maîtrisé (aucune mesure)")]
 STATUTS_ACTIONS = [("a_faire", "À faire"), ("en_cours", "En cours"), ("terminee", "Terminée")]
 
-# Les 20 cotations possibles (produit de trois valeurs parmi 1, 4, 7, 10) se répartissent ainsi :
-# faible {1, 4, 7, 10, 16, 28, 40} - moyen {49, 64, 70, 100, 112, 160, 196} - critique {280, 343, 400, 490, 700, 1000}.
-SEUIL_MOYEN = 41
-SEUIL_CRITIQUE = 200
+# Evaluation
+SEUIL_MOYEN = 70
+SEUIL_CRITIQUE = 343
 
 
 def calcul_niveau(cotation):
-    """Faible jusqu'à 40, moyen de 41 à 196, critique à partir de 200 (voir le détail des seuils ci-dessus)."""
     if cotation >= SEUIL_CRITIQUE:
         return "critique"
     if cotation >= SEUIL_MOYEN:
@@ -88,8 +86,7 @@ class Risque(models.Model):
     situation = models.TextField("Situation de travail", blank=True)
     frequence = models.IntegerField("Fréquence", choices=FREQUENCE, default=1)
     gravite = models.IntegerField("Gravité", choices=GRAVITE, default=1)
-    maitrise = models.IntegerField("Maîtrise", choices=MAITRISE, default=10,
-                                    help_text="Note l'absence de maîtrise du risque : 1 = bien maîtrisé, 10 = non maîtrisé.")
+    maitrise = models.IntegerField("Maîtrise", choices=MAITRISE, default=10)
     mesures_existantes = models.TextField("Mesures existantes", blank=True)
 
     class Meta:
