@@ -1,3 +1,9 @@
+Version 1.2.4 (29/09/2026) :
+
+- Améliorations sur l'affichage et la modification des risques
+- Ajout de la commande d'importation
+- Ajout de diverses fonctionnalités de base
+
 Version 1.2.3 (24/09/2026) :
 
 - Correction de la procédure de mise à jour
