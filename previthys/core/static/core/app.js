@@ -30,3 +30,10 @@ document.addEventListener("show.bs.modal", function (e) {
   e.target.querySelector(".modal-body img").alt = nom;
   e.target.querySelector(".modal-title").textContent = nom;
 });
+
+/* Filtres en liste déroulante des listes (ex. unité de travail) : appliqués dès que la valeur change. */
+document.addEventListener("change", function (e) {
+  if (e.target.matches("select[data-soumettre]")) {
+    e.target.form.submit();
+  }
+});

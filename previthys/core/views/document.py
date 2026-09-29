@@ -9,6 +9,7 @@ from django.views.generic import TemplateView
 
 from core.models import CategorieAction, VersionDuerp
 from core.utils import construire_donnees, construire_mesures_generales, filtre_structure, normaliser_donnees
+from core.utils.donnees import avec_macaron
 from core.utils.introduction import introduction_pour, methode, mise_en_forme
 from core.views.crud import Lecture
 
@@ -24,11 +25,14 @@ class Document(Lecture, TemplateView):
             version = VersionDuerp.objects.filter(filtre_structure(self.request.user), pk=pk).first()
             if not version:
                 raise Http404("Version introuvable")
-            ctx.update({"donnees": normaliser_donnees(version.donnees), "version": version, "mesures_generales": version.mesures_generales})
+            reference = timezone.localtime(version.date).date()   # « en retard » : à la date de la version archivée
+            ctx.update({"donnees": normaliser_donnees(version.donnees, reference), "version": version,
+                        "mesures_generales": [avec_macaron(a, reference) for a in version.mesures_generales]})
             intro = version.introduction                       # vide pour les archives antérieures à l'introduction
         else:
-            ctx["donnees"] = normaliser_donnees(construire_donnees(self.request.user))
-            ctx["mesures_generales"] = construire_mesures_generales(self.request.user)
+            reference = timezone.localdate()
+            ctx["donnees"] = normaliser_donnees(construire_donnees(self.request.user), reference)
+            ctx["mesures_generales"] = [avec_macaron(a, reference) for a in construire_mesures_generales(self.request.user)]
             intro = introduction_pour(self.request.user)
         ctx.update({"introduction": intro, "texte_introduction": mise_en_forme(intro.get("texte", "")), "methode": methode(),
                     "axes": axes_du_plan(ctx["donnees"], ctx["mesures_generales"]), "aujourdhui": timezone.localdate()})

@@ -6,7 +6,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -74,40 +74,82 @@ class Liste(crud.Liste):
     def manque(self):
         return self.request.GET.get("manque") if self.request.GET.get("manque") in self.MANQUES else ""
 
-    def get_queryset(self):
-        qs = self.filtrer_categorie(self.filtrer_portee(self.base(), self.portee()), self.categorie())
+    # Filtre « Unité » (liste déroulante) : actions liées à un risque de l'unité, et actions générales qui la concernent
+    @cached_property
+    def unite_choisie(self):
+        valeur = self.request.GET.get("unite", "")
+        if not valeur.isdigit():
+            return None
+        return UniteTravail.objects.filter(filtre_structure(self.request.user)).filter(pk=int(valeur)).first()
+
+    @staticmethod
+    def filtrer_unite(qs, unite):
+        if unite is None:
+            return qs
+        liees = ActionPrevention.objects.filter(risques__unite=unite).values("pk")
+        generales = ActionPrevention.objects.filter(risques__isnull=True).filter(Q(structure__isnull=True) | Q(structure=unite.structure_id)).values("pk")
+        return qs.filter(Q(pk__in=liees) | Q(pk__in=generales))
+
+    def filtrer_manque(self, qs):
         if self.manque():   # lien « Actions à compléter » du tableau de bord : actions en cours à qui il manque une information
             qs = qs.exclude(statut="terminee").filter(**self.MANQUES[self.manque()][1])
         return qs
 
-    def url(self, portee, categorie):
-        parametres = urlencode([(k, v) for k, v in (("portee", portee), ("categorie", categorie)) if v])
-        return reverse("actions_liste") + ("?" + parametres if parametres else "")
+    def get_queryset(self):
+        qs = self.filtrer_categorie(self.filtrer_portee(self.base(), self.portee()), self.categorie())
+        return self.filtrer_unite(self.filtrer_manque(qs), self.unite_choisie)
+
+    def listes_filtres(self):
+        """Trois listes déroulantes sur une ligne : unité, portée, catégorie. Chacune compte les actions
+        en tenant compte des autres filtres (et du filtre « à compléter » du tableau de bord)."""
+        if hasattr(self, "_listes_filtres"):
+            return self._listes_filtres
+        unite, portee, categorie = self.unite_choisie, self.portee(), self.categorie()
+        base = self.filtrer_manque(self.base())
+
+        # Unités
+        autres = list(self.filtrer_categorie(self.filtrer_portee(base, portee), categorie))
+        unites = list(UniteTravail.objects.filter(filtre_structure(self.request.user)).order_by("nom"))
+        comptes = {u.pk: 0 for u in unites}
+        for a in autres:
+            liees = {r.unite_id for r in a.risques.all()}
+            for u in unites:
+                if u.pk in liees or (not liees and (a.structure_id is None or a.structure_id == u.structure_id)):
+                    comptes[u.pk] += 1
+        options_unites = [("", "Toutes les unités (%d)" % len(autres))] + [(str(u.pk), "%s (%d)" % (u.nom, comptes[u.pk])) for u in unites]
+
+        # Portées
+        par_portee = {"": 0, "generales": 0, "communes": 0, "unite": 0}
+        for n in self.filtrer_categorie(self.filtrer_unite(base, unite), categorie).values_list("nb_unites", flat=True):
+            par_portee[""] += 1
+            par_portee["generales" if n == 0 else "communes" if n > 1 else "unite"] += 1
+        options_portees = [(cle, "%s (%d)" % ("Toutes les portées" if not cle else lib, par_portee[cle])) for cle, lib in self.PORTEES]
+
+        # Catégories
+        par_categorie = {}
+        for c in self.filtrer_portee(self.filtrer_unite(base, unite), portee).values_list("categorie", flat=True):
+            par_categorie[c] = par_categorie.get(c, 0) + 1
+        options_categories = [("", "Toutes les catégories (%d)" % sum(par_categorie.values()))]
+        options_categories += [(str(c.pk), "%s (%d)" % (c.nom, par_categorie.get(c.pk, 0))) for c in CategorieAction.objects.all()]
+        if par_categorie.get(None) or categorie == "aucune":
+            options_categories.append(("aucune", "Non classées (%d)" % par_categorie.get(None, 0)))
+
+        self._listes_filtres = [
+            {"nom": "unite", "libelle": "Unité", "valeur": str(unite.pk) if unite else "", "options": options_unites},
+            {"nom": "portee", "libelle": "Portée", "valeur": portee, "options": options_portees},
+            {"nom": "categorie", "libelle": "Catégorie", "valeur": categorie, "options": options_categories},
+        ]
+        return self._listes_filtres
 
     def filtres(self):
-        portee, categorie = self.portee(), self.categorie()
-        # Chaque rangée compte les actions en tenant compte du filtre choisi dans l'autre rangée
-        comptes = {"": 0, "generales": 0, "communes": 0, "unite": 0}
-        for n in self.filtrer_categorie(self.base(), categorie).values_list("nb_unites", flat=True):
-            comptes[""] += 1
-            comptes["generales" if n == 0 else "communes" if n > 1 else "unite"] += 1
-        par_categorie = {}
-        for c in self.filtrer_portee(self.base(), portee).values_list("categorie", flat=True):
-            par_categorie[c] = par_categorie.get(c, 0) + 1
-        boutons_categories = [{"libelle": "Toutes", "nombre": sum(par_categorie.values()), "actif": categorie == "", "url": self.url(portee, "")}]
-        boutons_categories += [{"libelle": c.nom, "nombre": par_categorie.get(c.pk, 0), "actif": categorie == str(c.pk), "url": self.url(portee, c.pk)}
-                               for c in CategorieAction.objects.all()]
-        if par_categorie.get(None):
-            boutons_categories.append({"libelle": "Non classées", "nombre": par_categorie[None], "actif": categorie == "aucune", "url": self.url(portee, "aucune")})
-        filtres = []
-        if self.manque():
-            filtres.append({"titre": "À compléter", "boutons": [{"libelle": "Actions en cours %s  ✕" % self.MANQUES[self.manque()][0],
-                                                                  "nombre": len(self.object_list), "actif": True, "url": self.url(portee, categorie)}]})
-        return filtres + [
-            {"titre": "Portée", "boutons": [{"libelle": lib, "nombre": comptes[cle], "actif": cle == portee, "url": self.url(cle, categorie)}
-                                            for cle, lib in self.PORTEES]},
-            {"titre": "Catégorie", "boutons": boutons_categories},
-        ]
+        """Seul filtre restant sous forme de pastille : « à compléter », posé par un lien du tableau de bord."""
+        if not self.manque():
+            return []
+        unite = self.unite_choisie.pk if self.unite_choisie else ""
+        parametres = urlencode([(k, v) for k, v in (("unite", unite), ("portee", self.portee()), ("categorie", self.categorie())) if v])
+        return [{"titre": "À compléter", "boutons": [{"libelle": "Actions en cours %s  ✕" % self.MANQUES[self.manque()][0],
+                                                      "nombre": len(self.object_list), "actif": True,
+                                                      "url": reverse("actions_liste") + ("?" + parametres if parametres else "")}]}]
 
     @cached_property
     def risques_visibles(self):

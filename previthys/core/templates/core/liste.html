@@ -14,6 +14,18 @@
     {% if url_ajouter %}<a class="btn btn-success mb-2" href="{{ url_ajouter }}">{{ libelle_ajouter }}</a>{% endif %}
   </div>
   <div class="card card-body">
+    {% if listes_filtres %}
+      <form method="get" class="d-flex align-items-center flex-wrap gap-2 mb-2">
+        {% for k, v in parametres_conserves %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+        {% for l in listes_filtres %}
+          <label class="small text-body-secondary" for="filtre-{{ l.nom }}">{{ l.libelle }}</label>
+          <select class="form-select form-select-sm w-auto{% if l.valeur %} border-dark fw-semibold{% endif %}" id="filtre-{{ l.nom }}" name="{{ l.nom }}" data-soumettre>
+            {% for valeur, libelle in l.options %}<option value="{{ valeur }}"{% if valeur == l.valeur %} selected{% endif %}>{{ libelle }}</option>{% endfor %}
+          </select>
+        {% endfor %}
+        <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filtrer</button></noscript>
+      </form>
+    {% endif %}
     {% for groupe in filtres %}
       <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
         {% if groupe.titre %}<span class="small text-body-secondary">{{ groupe.titre }}</span>{% endif %}

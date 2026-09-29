@@ -250,12 +250,13 @@ class MesuresRealiseesTests(BaseTest):
         self.assertEqual([a["description"] for a in r["actions"]], ["Formation gestes et postures"])
         self.assertEqual(len(r["actions_toutes"]), 2)
 
-    def test_document_affiche_la_mesure_realisee_dans_les_mesures_existantes(self):
+    def test_document_une_colonne_mesures_et_actions_avec_macarons(self):
         html = self.client.get(reverse("document")).content.decode()
-        self.assertIn("Échelles contrôlées.", html)
-        self.assertIn("• Échelles remplacées", html)
+        self.assertIn('<span class="badge text-bg-info">Existante</span> Échelles contrôlées.', html)
+        self.assertIn('<span class="badge text-bg-success">Terminée</span> Échelles remplacées', html)
         self.assertIn("réalisée le 04/03/2026", html)
-        # l'action terminée n'apparaît plus dans « Actions prévues » : une seule occurrence de son texte
+        self.assertIn('<span class="badge text-bg-secondary">À faire</span> Formation gestes et postures', html)
+        # chaque action n'apparaît qu'une fois, dans la colonne unique
         self.assertEqual(html.count("Échelles remplacées"), 1)
         self.assertIn("Formation gestes et postures", html)
 
@@ -267,8 +268,7 @@ class MesuresRealiseesTests(BaseTest):
                 {"description": "À venir", "statut": "À faire", "echeance": "", "responsable": ""}]}]}]
         v = VersionDuerp.objects.create(numero=9, commentaire="ancienne", donnees=ancienne)
         html = self.client.get(reverse("versions_document", args=[v.pk])).content.decode()
-        self.assertIn("• Faite", html)
-        self.assertIn("(réalisée)", html)
+        self.assertIn('<span class="badge text-bg-success">Terminée</span> Faite', html)
         self.assertIn("À venir", html)
         self.assertEqual(self.client.get(reverse("versions_export", args=[v.pk])).status_code, 200)
 

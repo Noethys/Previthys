@@ -314,3 +314,51 @@ class IntroductionTests(Base):
         from core.models import Introduction
         self.assertEqual(Introduction.objects.get(structure__isnull=True).texte, "Texte importé")
         self.assertEqual(UniteTravail.objects.count(), 3)   # rien d'autre n'est importé
+
+
+class FiltreUniteTests(Base):
+    def test_filtre_unite_seul_et_combine(self):
+        page = self.client.get(reverse("risques_liste") + "?unite=%d" % self.voirie.pk).content.decode()
+        self.assertIn("Stress voirie", page)
+        self.assertNotIn("Agressions accueil", page)
+        self.assertIn("Voirie (1)", page)                       # nombre de risques par unité dans la liste déroulante
+        combine = self.client.get(reverse("risques_liste") + "?filtre=vigilance&unite=%d" % self.accueil.pk).content.decode()
+        self.assertIn("Agressions accueil", combine)
+        self.assertIn('name="filtre" value="vigilance"', combine)   # l'autre filtre est conservé au changement d'unité
+
+    def test_unite_d_une_autre_structure_absente(self):
+        self.client.force_login(self.user_a)
+        page = self.client.get(reverse("risques_liste") + "?unite=%d" % self.ecole_b.pk).content.decode()
+        self.assertNotIn("École B", page)
+        self.assertNotIn("Stress école B", page)
+
+
+class FiltreUnitePlanTests(Base):
+    def test_plan_filtre_par_unite(self):
+        ActionPrevention.objects.create(risque=self.rps_voirie, description="Propre voirie")
+        ActionPrevention.objects.create(risque=self.rps_accueil, description="Propre accueil")
+        ActionPrevention.objects.create(risques=[self.rps_voirie, self.rps_accueil], description="Commune aux deux")
+        ActionPrevention.objects.create(description="Générale pour tous")
+        ActionPrevention.objects.create(description="Générale de B", structure=self.struct_b)
+        page = self.client.get(reverse("actions_liste") + "?unite=%d" % self.voirie.pk).content.decode()
+        for texte in ("Propre voirie", "Commune aux deux", "Générale pour tous"):
+            self.assertIn(texte, page)
+        for texte in ("Propre accueil", "Générale de B"):
+            self.assertNotIn(texte, page)
+        self.assertIn("Voirie (3)", page)
+        # trois listes déroulantes : unité, portée, catégorie, avec les nombres tenant compte des autres filtres
+        for nom in ("unite", "portee", "categorie"):
+            self.assertIn('name="%s" data-soumettre' % nom, page)
+        self.assertIn("Communes (1)", page)
+        self.assertIn("Générales (1)", page)
+        communes = self.client.get(reverse("actions_liste") + "?unite=%d&portee=communes" % self.voirie.pk).content.decode()
+        self.assertIn("Commune aux deux", communes)
+        self.assertNotIn("Propre voirie", communes)
+        self.assertIn('<option value="communes" selected', communes)
+        self.assertIn("Voirie (1)", communes)
+
+    def test_filtre_a_completer_conserve_dans_les_listes(self):
+        ActionPrevention.objects.create(risque=self.rps_voirie, description="Sans échéance")
+        page = self.client.get(reverse("actions_liste") + "?manque=echeance&portee=unite").content.decode()
+        self.assertIn('type="hidden" name="manque" value="echeance"', page)
+        self.assertIn("?portee=unite", page)   # la pastille ✕ retire seulement « à compléter »

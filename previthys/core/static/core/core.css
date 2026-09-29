@@ -21,7 +21,7 @@ table.dataTable td { vertical-align: middle; }
 @media print {
   body { background: #fff; }
   .navbar, .d-print-none, .btn { display: none !important; }
-  .niveau-faible, .niveau-moyen, .niveau-critique { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .niveau-faible, .niveau-moyen, .niveau-critique, .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 /* Sur petit écran, seul le tableau défile horizontalement (pas toute la page) */
 .dataTables_wrapper .row > .col-sm-12 { overflow-x: auto; }
@@ -30,18 +30,26 @@ table.dataTable td { vertical-align: middle; }
 /* Document unique : mêmes largeurs de colonnes sur toutes les unités, pour un alignement visuel d'un tableau à l'autre. */
 table.table-document { table-layout: fixed; width: 100%; }
 table.table-document th, table.table-document td { overflow-wrap: break-word; }
-table.table-document th:nth-child(1), table.table-document td:nth-child(1) { width: 20%; }
+table.table-document th:nth-child(1), table.table-document td:nth-child(1) { width: 31%; }
 table.table-document th:nth-child(2), table.table-document td:nth-child(2) { width: 12%; }
-table.table-document th:nth-child(3), table.table-document td:nth-child(3) { width: 13%; }
-table.table-document th:nth-child(4), table.table-document td:nth-child(4) { width: 27.5%; }
-table.table-document th:nth-child(5), table.table-document td:nth-child(5) { width: 27.5%; }
+table.table-document th:nth-child(3), table.table-document td:nth-child(3) { width: 8%; }
+table.table-document th:nth-child(4), table.table-document td:nth-child(4) { width: 49%; }
+/* Écran (prévisualisation) : colonne de cotation plus étroite, la page étant plus large qu'une feuille A4 */
+@media screen {
+  table.table-document th:nth-child(3), table.table-document td:nth-child(3) { width: 6rem; font-size: .9rem; }   /* juste « 10 × 10 × 10 » */
+  table.table-document th:nth-child(4), table.table-document td:nth-child(4) { width: auto; }
+}
+/* Nom de l'unité de travail : plus d'espace au-dessus pour bien séparer les unités */
+.document-unique .titre-unite { margin-top: 3rem; }
+/* Colonne « Actions de prévention » : une action par ligne, précédée de son macaron de statut */
+.action-document + .action-document { margin-top: .3rem; padding-top: .3rem; border-top: 1px dashed var(--bs-border-color); }
 
 /* Vignette des pièces jointes de type image, dans le formulaire de modification d'un risque. */
 .piece-jointe-vignette { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; border: 1px solid var(--bs-border-color); cursor: zoom-in; }
 #pj-apercu .modal-body img { max-height: 75vh; }
 
 /* Photos jointes à un risque, affichées et imprimées dans le document unique, à une taille raisonnable. */
-.photo-risque-impression { width: 90px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid var(--bs-border-color); }
+.photo-risque-impression { width: 140px; height: 105px; object-fit: cover; border-radius: 4px; border: 1px solid var(--bs-border-color); }
 
 /* Liste des risques : actions de prévention associées, une par ligne. */
 .liste-actions li { font-size: .875rem; white-space: normal; }
@@ -100,5 +108,5 @@ a.kpi-mini:hover { background: #f8f9fa; }
 @media print {
   html:has(.document-unique) { font-size: 12px; }
   .document-unique .table > :not(caption) > * > * { padding: .2rem .3rem; }
-  .document-unique .photo-risque-impression { width: 70px; height: 55px; }
+  .document-unique .photo-risque-impression { width: 90px; height: 70px; }
 }

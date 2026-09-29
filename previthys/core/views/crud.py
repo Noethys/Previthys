@@ -51,6 +51,11 @@ class Liste(AccesDuerp, ListView):
     def actions_supplementaires(self, obj):
         return []  # liste de (libellé, url)
 
+    def listes_filtres(self):
+        """Filtres en liste déroulante au-dessus du tableau (appliqués dès le choix) :
+        [{"nom": "unite", "libelle": "Unité", "valeur": "3", "options": [("", "Toutes (290)"), ("3", "Voirie (17)"), ...]}]"""
+        return []
+
     def filtres(self):
         """Rangées de boutons de filtre au-dessus du tableau :
         [{"titre": "...", "boutons": [{"libelle", "nombre", "url", "actif"}, ...]}, ...]"""
@@ -72,7 +77,9 @@ class Liste(AccesDuerp, ListView):
             "colonnes_masquees": self.colonnes_masquees,
             "ordre": self.ordre, "vide": self.vide, "nom_liste": self.model._meta.model_name,
             "url_ajouter": reverse(self.url_ajouter) if self.url_ajouter and _perm(self, "add") else None,
-            "libelle_ajouter": self.libelle_ajouter, "filtres": self.filtres(),
+            "libelle_ajouter": self.libelle_ajouter, "filtres": self.filtres(), "listes_filtres": self.listes_filtres(),
+            # paramètres d'adresse à conserver quand on change une liste déroulante (les autres filtres restent actifs)
+            "parametres_conserves": [(k, v) for k, v in self.request.GET.items() if k not in {l["nom"] for l in self.listes_filtres()}],
             "colonne_actions": bool(self.url_modifier or self.url_supprimer),
         })
         return ctx

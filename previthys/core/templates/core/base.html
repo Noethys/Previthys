@@ -15,7 +15,7 @@
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Afficher le menu"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="menu">
       {% if user.is_authenticated %}
-      <ul class="navbar-nav me-auto">
+      <ul class="navbar-nav mx-auto">
         {% if perms.core.view_risque %}
         <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Vue d'ensemble</a></li>
         <li class="nav-item dropdown">

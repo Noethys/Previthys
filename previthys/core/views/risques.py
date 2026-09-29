@@ -11,7 +11,7 @@ from django.utils.text import Truncator
 
 from core.forms.actions import FormulaireActionRisque
 from core.forms.risques import FormulaireRisque
-from core.models import NOTE_COTATION, ActionPrevention, PieceJointe, Risque, actions_propres
+from core.models import NOTE_COTATION, ActionPrevention, PieceJointe, Risque, UniteTravail, actions_propres
 from core.utils import filtre_actions, filtre_structure
 from core.utils import tableau_de_bord as tdb
 from core.utils.journal import consigner
@@ -62,9 +62,26 @@ class Liste(crud.Liste):
     ordre = "7,desc"
     url_ajouter, url_modifier, url_supprimer = "risques_ajouter", "risques_modifier", "risques_supprimer"
 
+    def base(self):
+        return (Risque.objects.select_related("unite", "categorie").prefetch_related("actions__risques")
+                .annotate(nbre_pieces_jointes=Count("pieces_jointes")).filter(filtre_structure(self.request.user, "unite__")))
+
+    def unite(self):
+        valeur = self.request.GET.get("unite", "")
+        return valeur if valeur.isdigit() else ""
+
+    def listes_filtres(self):
+        """Filtre « Unité » : unités visibles, avec leur nombre de risques."""
+        comptes = dict(self.base().values_list("unite").annotate(n=Count("pk", distinct=True)).values_list("unite", "n"))
+        unites = UniteTravail.objects.filter(filtre_structure(self.request.user)).order_by("nom")
+        options = [("", "Toutes les unités (%d)" % sum(comptes.values()))]
+        options += [(str(u.pk), "%s (%d)" % (u.nom, comptes.get(u.pk, 0))) for u in unites]
+        return [{"nom": "unite", "libelle": "Unité", "valeur": self.unite(), "options": options}]
+
     def get_queryset(self):
-        qs = (Risque.objects.select_related("unite", "categorie").prefetch_related("actions__risques")
-              .annotate(nbre_pieces_jointes=Count("pieces_jointes")).filter(filtre_structure(self.request.user, "unite__")))
+        qs = self.base()
+        if self.unite():
+            qs = qs.filter(unite_id=int(self.unite()))
         g, f = self.request.GET.get("gravite", ""), self.request.GET.get("frequence", "")
         if g.isdigit() and f.isdigit():
             qs = qs.filter(gravite=int(g), frequence=int(f))
@@ -91,7 +108,8 @@ class Liste(crud.Liste):
         if not actifs:
             return []
         n = len(self.object_list)
-        return [{"titre": "Filtre", "boutons": [{"libelle": " · ".join(actifs) + "  ✕", "nombre": n, "actif": True, "url": reverse("risques_liste")}]}]
+        url = reverse("risques_liste") + ("?unite=%s" % self.unite() if self.unite() else "")
+        return [{"titre": "Filtre", "boutons": [{"libelle": " · ".join(actifs) + "  ✕", "nombre": n, "actif": True, "url": url}]}]
 
     def cellules(self, o):
         return [o.pk, o.unite.nom, o.danger, o.categorie.nom, o.frequence, o.gravite, o.maitrise, (badge_niveau(o), o.cotation), (liste_actions(o), len(o.actions.all())), o.nbre_pieces_jointes]
