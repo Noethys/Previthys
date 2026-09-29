@@ -1,13 +1,64 @@
 {% extends "core/base.html" %}
 {% block titre_page %}Document unique{% endblock %}
 {% block contenu %}
-  <h1 class="h4">Document unique d'évaluation des risques professionnels{% if version %} - version {{ version.numero }} du {{ version.date|date:"d/m/Y" }}{% endif %}</h1>
-  <p class="text-body-secondary">{{ PREVITHYS_ORGANISATION }}{% if version and version.commentaire %} - {{ version.commentaire }}{% endif %}</p>
+<div class="document-unique">
   <p class="d-print-none">
     <button class="btn btn-primary" type="button" data-imprimer>Imprimer / enregistrer en PDF</button>
     <a class="btn btn-success" href="{% if version %}{% url 'versions_export' version.pk %}{% else %}{% url 'export_xlsx' %}{% endif %}">Exporter en Excel</a>
     {% if version %}<a class="btn btn-outline-secondary" href="{% url 'versions_liste' %}">Retour aux versions</a>{% endif %}
+    {% if not version and perms.core.change_introduction %}<a class="btn btn-outline-secondary" href="{% url 'introduction' %}">Modifier l'introduction</a>{% endif %}
   </p>
+
+  {# ---------- Page de garde ---------- #}
+  <section class="page-garde">
+    {% if introduction.logo %}<img src="{{ introduction.logo }}" alt="Logo" class="logo-garde">{% endif %}
+    <p class="surtitre">Prévention des risques professionnels</p>
+    <h1>Document unique d'évaluation des risques professionnels</h1>
+    <p class="organisation">{% if version and version.structure %}{{ version.structure }}{% else %}{{ PREVITHYS_ORGANISATION }}{% endif %}</p>
+    <p class="edition">{% if version %}Version {{ version.numero }} du {{ version.date|date:"d/m/Y" }}{% if version.commentaire %}<br><small>{{ version.commentaire }}</small>{% endif %}{% else %}Édition du {{ aujourdhui|date:"d/m/Y" }} (document de travail, non archivé){% endif %}</p>
+  </section>
+
+  {# ---------- Introduction ---------- #}
+  <section class="introduction-document saut-page">
+    <h2 class="h5">Introduction</h2>
+    {% if texte_introduction %}<div class="introduction-texte">{{ texte_introduction }}</div>{% endif %}
+
+    <h3 class="h6 mt-4">Méthode d'évaluation</h3>
+    <p>Chaque risque est coté selon trois critères, notés 1, 4, 7 ou 10. Les trois notes sont multipliées : la cotation obtenue (de 1 à 1 000) classe le risque en trois niveaux de priorité.</p>
+    <div class="row g-2 baremes">
+      {% for titre, explication, notes in methode.baremes %}
+        <div class="col-md-4">
+          <table class="table table-sm table-bordered mb-1">
+            <thead><tr><th colspan="2">{{ titre }}<br><small class="fw-normal text-body-secondary">{{ explication }}</small></th></tr></thead>
+            <tbody>{% for n in notes %}<tr><td class="text-center fw-bold" style="width: 3rem">{{ n.note }}</td><td>{{ n.libelle }}</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      {% endfor %}
+    </div>
+    <table class="table table-sm table-bordered niveaux-cotation mt-2">
+      <thead><tr><th>Cotation F × G × M</th>{% for code, lib, a, b in methode.niveaux %}<th class="niveau-{{ code }} text-center">{{ lib }}</th>{% endfor %}</tr></thead>
+      <tbody><tr><td>Valeurs</td>{% for code, lib, a, b in methode.niveaux %}<td class="text-center">{{ a }} à {{ b }}</td>{% endfor %}</tr>
+        <tr><td>Priorité</td><td class="text-center">Priorité 3</td><td class="text-center">Priorité 2</td><td class="text-center">Priorité 1 : à traiter en premier</td></tr></tbody>
+    </table>
+
+    <h3 class="h6 mt-4">Lecture du document</h3>
+    <p>Pour chaque unité de travail, un tableau présente les risques du plus élevé au plus faible : le danger et la situation de travail, la catégorie, la cotation (F × G × M, sur un fond de la couleur du niveau), les mesures existantes (dont les actions déjà réalisées) et les actions de prévention prévues.
+      Les mesures générales, qui concernent l'ensemble des unités, sont présentées avant les unités. Une « action commune » est une même action menée pour plusieurs unités.</p>
+
+    <h3 class="h6 mt-4">Unités de travail</h3>
+    <p>Une unité de travail regroupe des agents exposés à des risques de même nature. {{ donnees|length }} unité{{ donnees|length|pluralize }} de travail {{ donnees|length|pluralize:"est retenue,sont retenues" }} :</p>
+    <ol class="liste-unites">
+      {% for unite in donnees %}<li><a href="#unite-{{ forloop.counter }}">{{ unite.nom }}</a> <small class="text-body-secondary">({{ unite.risques|length }} risque{{ unite.risques|length|pluralize }})</small></li>{% endfor %}
+    </ol>
+
+    {% if axes %}
+      <h3 class="h6 mt-4">Plan d'actions</h3>
+      <p>Les actions de prévention sont réparties selon les axes suivants :</p>
+      <ul>{% for axe, n in axes %}<li>{{ axe }} <small class="text-body-secondary">({{ n }} action{{ n|pluralize }})</small></li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+
+  <div class="saut-page"></div>
   {% if mesures_generales %}
     <h2 class="h5 mt-4">Mesures générales de prévention <small class="text-body-secondary">(ensemble des unités de travail)</small></h2>
     <table class="table table-bordered table-sm">
@@ -21,7 +72,7 @@
     </table>
   {% endif %}
   {% for unite in donnees %}
-    <h2 class="h5 mt-4">{{ unite.nom }} <small class="text-body-secondary">({{ unite.effectif }} agent{{ unite.effectif|pluralize }})</small></h2>
+    <h2 class="h5 mt-4" id="unite-{{ forloop.counter }}">{{ unite.nom }} <small class="text-body-secondary">({{ unite.effectif }} agent{{ unite.effectif|pluralize }})</small></h2>
     {% if unite.description %}<p>{{ unite.description }}</p>{% endif %}
     <table class="table table-bordered table-sm table-document">
       <thead><tr><th>Danger</th><th>Catégorie</th><th class="text-center">F × G × M</th><th>Mesures existantes</th><th>Actions prévues</th></tr></thead>
@@ -44,4 +95,5 @@
   {% empty %}
     <p class="text-body-secondary">Aucune unité de travail saisie.</p>
   {% endfor %}
+</div>
 {% endblock %}

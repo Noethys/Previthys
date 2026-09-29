@@ -271,3 +271,46 @@ class TableauDeBordTests(Base):
         self.assertIn("Agressions accueil", vigilance)
         self.assertNotIn("Stress voirie", vigilance)   # a une action en cours
         self.assertContains(self.client.get(reverse("actions_liste") + "?manque=echeance"), "Sans échéance")
+
+
+class IntroductionTests(Base):
+    def test_saisie_document_et_archive(self):
+        import base64
+        png = b"\x89PNG\r\n\x1a\n" + b"0" * 50
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.post(reverse("introduction"), {"texte": "Présentation.\n\n## Références\n- Article L.4121-3",
+                                                   "logo": SimpleUploadedFile("logo.png", png, content_type="image/png")})
+        from core.models import Introduction
+        intro = Introduction.objects.get(structure__isnull=True)
+        self.assertTrue(intro.logo.startswith("data:image/png;base64,"))
+        document = self.client.get(reverse("document"))
+        self.assertContains(document, "page-garde")
+        self.assertContains(document, "<li>Article L.4121-3</li>", html=True)
+        self.assertContains(document, "Méthode d'évaluation")
+        self.assertContains(document, 'href="#unite-1"')
+        # un logo qui n'est pas une image est refusé
+        r = self.client.post(reverse("introduction"), {"texte": "x", "logo": SimpleUploadedFile("logo.png", b"MZ\x90\x00", content_type="image/png")})
+        self.assertContains(r, "PNG ou JPEG")
+        # l'introduction est archivée avec la version
+        self.client.post(reverse("versions_ajouter"), {"commentaire": "v1"})
+        version = VersionDuerp.objects.get()
+        self.assertIn("Présentation.", version.introduction["texte"])
+        intro.texte = "Modifiée depuis"
+        intro.save()
+        self.assertContains(self.client.get(reverse("versions_document", args=[version.pk])), "Présentation.")
+
+    def test_texte_echappe(self):
+        from core.utils.introduction import mise_en_forme
+        self.assertNotIn("<script>", mise_en_forme('<script>alert("x")</script>'))
+
+    def test_import_introduction_seulement(self):
+        donnees = {"format": "previthys-import/2", "unites": [], "categories": [], "risques": [], "actions": [],
+                   "introduction": {"texte": "Texte importé", "logo": "logo.png"}}
+        with tempfile.NamedTemporaryFile(suffix=".zip") as f:
+            with zipfile.ZipFile(f.name, "w") as z:
+                z.writestr("donnees.json", json.dumps(donnees))
+                z.writestr("logo.png", b"\x89PNG\r\n\x1a\n" + b"0" * 20)
+            call_command("importer_duerp", f.name, "--introduction-seulement", stdout=StringIO())
+        from core.models import Introduction
+        self.assertEqual(Introduction.objects.get(structure__isnull=True).texte, "Texte importé")
+        self.assertEqual(UniteTravail.objects.count(), 3)   # rien d'autre n'est importé

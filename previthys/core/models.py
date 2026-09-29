@@ -315,6 +315,23 @@ class JournalAudit(models.Model):
         return "%s - %s %s" % (self.horodatage, self.get_action_display(), self.objet_repr)
 
 
+class Introduction(models.Model):
+    """Introduction du document unique (page de garde et texte de présentation), une par structure.
+    Sans structure : introduction par défaut, utilisée quand une structure n'a pas la sienne."""
+    structure = models.OneToOneField(Structure, verbose_name="Structure", on_delete=models.CASCADE, blank=True, null=True,
+                                     help_text="Laissez vide pour l'introduction par défaut (toutes les structures).")
+    texte = models.TextField("Texte de présentation", blank=True)
+    logo = models.TextField("Logo", blank=True, help_text="Image au format data:… (PNG ou JPEG), affichée sur la page de garde.")
+    modifie_le = models.DateTimeField("Modifiée le", auto_now=True)
+
+    class Meta:
+        verbose_name = "introduction du document"
+        verbose_name_plural = "introductions du document"
+
+    def __str__(self):
+        return "Introduction%s" % (" - %s" % self.structure if self.structure else " par défaut")
+
+
 class VersionDuerp(models.Model):
     """Copie figée du DUERP. Conservation obligatoire pendant 40 ans : à ne supprimer qu'en connaissance de cause."""
     structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=True, null=True,
@@ -325,6 +342,7 @@ class VersionDuerp(models.Model):
     commentaire = models.TextField("Motif de la mise à jour")
     donnees = models.JSONField("Données archivées", default=list)
     mesures_generales = models.JSONField("Mesures générales archivées", default=list, blank=True)
+    introduction = models.JSONField("Introduction archivée", default=dict, blank=True)
 
     class Meta:
         verbose_name = "version du DUERP"

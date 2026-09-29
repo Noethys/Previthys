@@ -1,0 +1,49 @@
+{% extends "core/base.html" %}
+{% block titre_page %}{{ titre }}{% endblock %}
+{% block contenu %}
+  <div class="d-flex justify-content-between align-items-start flex-wrap">
+    <div>
+      <h1 class="h4">{{ titre }}</h1>
+      <p class="text-body-secondary">Page de garde et présentation, placées au début du document unique. La méthode de cotation, la liste des unités de travail et les axes du plan d'actions sont ajoutés automatiquement à la suite.</p>
+    </div>
+    <a class="btn btn-outline-secondary mb-2" href="{% url 'document' %}">Voir le document</a>
+  </div>
+  {% if onglets %}
+    <ul class="nav nav-tabs mb-3">
+      {% for s, actif in onglets %}
+        <li class="nav-item"><a class="nav-link{% if actif %} active{% endif %}" href="{% url 'introduction' %}{% if s %}?structure={{ s.pk }}{% endif %}">{% if s %}{{ s }}{% else %}Par défaut (toutes les structures){% endif %}</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  <div class="row">
+    <div class="col-lg-7 mb-3">
+      <div class="card card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.texte.id_for_label }}">{{ form.texte.label }}</label>
+            {{ form.texte }}
+            <small class="form-text text-body-secondary">{{ form.texte.help_text }}</small>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.logo.id_for_label }}">{{ form.logo.label }}</label>
+            {% if introduction.logo %}<div class="mb-2"><img src="{{ introduction.logo }}" alt="Logo actuel" class="logo-introduction border rounded p-1"></div>{% endif %}
+            {{ form.logo }}
+            <small class="form-text text-body-secondary">{{ form.logo.help_text }}</small>
+            {% for e in form.logo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            {% if introduction.logo %}<div class="form-check mt-2">{{ form.supprimer_logo }}<label class="form-check-label" for="{{ form.supprimer_logo.id_for_label }}">{{ form.supprimer_logo.label }}</label></div>{% endif %}
+          </div>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </form>
+      </div>
+    </div>
+    <div class="col-lg-5 mb-3">
+      <div class="card card-body">
+        <h2 class="h6">Aperçu du texte enregistré</h2>
+        <div class="introduction-texte small">{% if apercu %}{{ apercu }}{% else %}<p class="text-body-secondary mb-0">Aucun texte pour l'instant.</p>{% endif %}</div>
+        <hr>
+        <p class="small text-body-secondary mb-0">Ajouté automatiquement dans le document : méthode d'évaluation (barèmes F, G, M et niveaux {% for code, lib, a, b in methode.niveaux %}{{ lib|lower }} {{ a }}–{{ b }}{% if not forloop.last %}, {% endif %}{% endfor %}), lecture du document, liste des unités de travail et axes du plan d'actions.</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

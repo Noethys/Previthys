@@ -5,7 +5,7 @@
 
 from django.urls import path
 
-from core.views import actions, auth, categories, categories_actions, dashboard, document, export, journal, mise_a_jour, pieces_jointes, risques, unites, versions
+from core.views import actions, auth, categories, categories_actions, introduction, dashboard, document, export, journal, mise_a_jour, pieces_jointes, risques, unites, versions
 
 urlpatterns = [
     path("connexion/", auth.Connexion.as_view(), name="login"),
@@ -13,6 +13,7 @@ urlpatterns = [
 
     path("", dashboard.Dashboard.as_view(), name="dashboard"),
     path("document/", document.Document.as_view(), name="document"),
+    path("document/introduction/", introduction.Modifier.as_view(), name="introduction"),
     path("export/xlsx/", export.ExportXlsx.as_view(), name="export_xlsx"),
     path("mise-a-jour/", mise_a_jour.MiseAJour.as_view(), name="mise_a_jour"),
     path("journal/", journal.Liste.as_view(), name="journal_liste"),

@@ -37,6 +37,7 @@ def construire_donnees(user, structure=None):
 
 def _action(a):
     return {
+        "id": a.pk,   # permet de compter une action commune une seule fois (plan d'actions du document)
         "description": a.description, "statut": a.get_statut_display(), "categorie": a.categorie.nom if a.categorie else "",
         "responsable": a.responsable,
         "echeance": a.echeance.strftime("%d/%m/%Y") if a.echeance else "",

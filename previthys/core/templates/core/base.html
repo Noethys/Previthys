@@ -38,6 +38,7 @@
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Document</a>
           <div class="dropdown-menu">
             <a class="dropdown-item" href="{% url 'document' %}">Document unique (impression)</a>
+            {% if perms.core.change_introduction %}<a class="dropdown-item" href="{% url 'introduction' %}">Introduction du document</a>{% endif %}
             <a class="dropdown-item" href="{% url 'export_xlsx' %}">Exporter en Excel (XLSX)</a>
           </div>
         </li>

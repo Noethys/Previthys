@@ -20,6 +20,7 @@ Tout est importé dans une seule transaction : en cas d'erreur, rien n'est enreg
 """
 
 import datetime
+import io
 import json
 import os
 import types
@@ -31,7 +32,7 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from core.models import ActionPrevention, CategorieAction, CategorieRisque, PieceJointe, Risque, Structure, UniteTravail
+from core.models import ActionPrevention, CategorieAction, CategorieRisque, Introduction, PieceJointe, Risque, Structure, UniteTravail
 from core.utils.fichiers import SIGNATURES
 from core.utils.journal import consigner
 
@@ -52,6 +53,8 @@ class Command(BaseCommand):
         parser.add_argument("--utilisateur", help="Identifiant de l'utilisateur à qui attribuer l'import (journal, photos).")
         parser.add_argument("--simulation", action="store_true", help="Vérifie le paquet et affiche le bilan sans rien enregistrer.")
         parser.add_argument("--forcer", action="store_true", help="Importe même si des unités portant les mêmes noms existent déjà.")
+        parser.add_argument("--introduction-seulement", action="store_true",
+                            help="N'importe que l'introduction du document (texte et logo), sans unités, risques ni actions.")
 
     def handle(self, *args, **options):
         chemin = options["paquet"]
@@ -91,7 +94,33 @@ class Command(BaseCommand):
 
     # -----------------------------------------------------------------------------------------------------------
 
+    def importer_introduction(self, donnees, archive, structure, bilan):
+        """Introduction du document (texte de présentation et logo) : crée ou remplace celle de la structure."""
+        intro = donnees.get("introduction")
+        if not intro:
+            return
+        logo = ""
+        if intro.get("logo"):
+            from core.utils.introduction import logo_en_data_uri
+            try:
+                logo = logo_en_data_uri(io.BytesIO(archive.read(intro["logo"])))
+            except (KeyError, ValueError) as e:
+                raise CommandError("Logo de l'introduction : %s" % e)
+        objet, cree = Introduction.objects.get_or_create(structure=structure) if structure else \
+            (Introduction.objects.filter(structure__isnull=True).first(), False)
+        if objet is None:
+            objet, cree = Introduction.objects.create(structure=None), True
+        objet.texte, objet.logo = intro.get("texte", ""), logo or objet.logo
+        objet.save()
+        consigner(self.requete, "creation" if cree else "modification", objet, self.detail)
+        bilan["introduction"] = True
+
     def importer(self, donnees, archive, options):
+        if options.get("introduction_seulement"):
+            bilan = {"unites": 0, "categories_creees": [], "risques": 0, "actions": 0, "generales": 0, "communes": 0, "photos": 0}
+            structure = Structure.objects.get_or_create(nom=options["structure"])[0] if options["structure"] else None
+            self.importer_introduction(donnees, archive, structure, bilan)
+            return bilan
         bilan = {"unites": 0, "categories_creees": [], "risques": 0, "actions": 0, "generales": 0, "communes": 0, "photos": 0}
 
         structure = None
@@ -146,6 +175,8 @@ class Command(BaseCommand):
                 consigner(self.requete, "creation", piece, "Ajoutée au risque « %s » (%s)" % (risque.danger, self.detail))
                 bilan["photos"] += 1
 
+        self.importer_introduction(donnees, archive, structure, bilan)
+
         # Format 2 : actions désignant leurs risques (aucun = générale, plusieurs = commune)
         for a in donnees.get("actions", []):
             try:
@@ -183,5 +214,7 @@ class Command(BaseCommand):
         self.stdout.write("Risques : %d" % bilan["risques"])
         self.stdout.write("Actions de prévention : %d (dont %d générales et %d communes à plusieurs unités)" % (bilan["actions"], bilan["generales"], bilan["communes"]))
         self.stdout.write("Photos : %d" % bilan["photos"])
+        if bilan.get("introduction"):
+            self.stdout.write("Introduction du document : importée")
         if bilan["categories_creees"]:
             self.stdout.write("Catégories créées : %s" % ", ".join(bilan["categories_creees"]))
