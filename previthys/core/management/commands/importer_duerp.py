@@ -156,7 +156,7 @@ class Command(BaseCommand):
         return bilan
 
     def creer_action(self, a, risques, structure, bilan):
-        valeurs = {"statut": a.get("statut", "a_faire"), "duree": (a.get("duree") or "")[:100],
+        valeurs = {"statut": a.get("statut", "a_faire"), "duree": (a.get("duree") or "")[:100], "responsable": (a.get("responsable") or "")[:150],
                    "echeance": self.date(a.get("echeance")), "date_realisation": self.date(a.get("date_realisation"))}
         if a.get("cout") is not None:
             valeurs["cout"] = Decimal(str(a["cout"]))

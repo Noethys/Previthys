@@ -16,7 +16,7 @@ def construire_donnees(user, structure=None):
     unites = UniteTravail.objects.filter(filtre_structure(user))
     if structure:
         unites = unites.filter(Q(structure=structure) | Q(structure__isnull=True))
-    unites = unites.prefetch_related("risques__categorie", "risques__actions", "risques__actions__responsable", "risques__actions__risques", "risques__actions__categorie",
+    unites = unites.prefetch_related("risques__categorie", "risques__actions", "risques__actions__risques", "risques__actions__categorie",
                                      "risques__pieces_jointes")
     donnees = []
     for unite in unites:
@@ -38,7 +38,7 @@ def construire_donnees(user, structure=None):
 def _action(a):
     return {
         "description": a.description, "statut": a.get_statut_display(), "categorie": a.categorie.nom if a.categorie else "",
-        "responsable": (a.responsable.get_full_name() or a.responsable.get_username()) if a.responsable else "",
+        "responsable": a.responsable,
         "echeance": a.echeance.strftime("%d/%m/%Y") if a.echeance else "",
         "terminee": a.statut == "terminee",
         "date_realisation": a.date_realisation.strftime("%d/%m/%Y") if a.date_realisation else "",
@@ -48,7 +48,7 @@ def _action(a):
 
 def construire_mesures_generales(user, structure=None):
     """Actions générales (sans risque) visibles, pour le document, l'export et l'archivage."""
-    actions = ActionPrevention.objects.filter(risques__isnull=True).filter(filtre_structure(user)).select_related("responsable", "categorie")
+    actions = ActionPrevention.objects.filter(risques__isnull=True).filter(filtre_structure(user)).select_related("categorie")
     if structure:
         actions = actions.filter(Q(structure=structure) | Q(structure__isnull=True))
     return [_action(a) for a in actions]

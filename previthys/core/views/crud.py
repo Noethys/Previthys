@@ -35,6 +35,7 @@ class Liste(AccesDuerp, ListView):
     titre = ""
     description = ""
     colonnes = []          # libellés des colonnes (hors colonne Actions)
+    colonnes_masquees = []  # libellés des colonnes masquées par défaut (réaffichables par le bouton « Colonnes »)
     ordre = "0,asc"        # colonne et sens du tri initial
     vide = "Aucune donnée"
     url_ajouter = url_modifier = url_supprimer = None
@@ -68,6 +69,7 @@ class Liste(AccesDuerp, ListView):
             })
         ctx.update({
             "lignes": lignes, "titre": self.titre, "description": self.description, "colonnes": self.colonnes,
+            "colonnes_masquees": self.colonnes_masquees,
             "ordre": self.ordre, "vide": self.vide, "nom_liste": self.model._meta.model_name,
             "url_ajouter": reverse(self.url_ajouter) if self.url_ajouter and _perm(self, "add") else None,
             "libelle_ajouter": self.libelle_ajouter, "filtres": self.filtres(),

@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 
 from core.forms.base import FormulaireBase
 from core.models import ActionPrevention, Risque, Structure
-from core.utils import filtre_structure
+from core.utils import filtre_actions, filtre_structure
 
 
 class FormulaireAction(FormulaireBase):
@@ -35,8 +35,9 @@ class FormulaireAction(FormulaireBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["categorie"].empty_label = "(non classée)"
-        self.fields["responsable"].queryset = get_user_model().objects.filter(is_active=True)
-        self.fields["responsable"].label_from_instance = lambda u: u.get_full_name() or u.get_username()
+        # Texte libre, avec des suggestions (voir suggestions_responsables) : <datalist id="responsables-connus">
+        self.fields["responsable"].widget.attrs.update({"list": "responsables-connus", "autocomplete": "off",
+                                                        "placeholder": "Ex. : F. Dupont, responsable des services techniques"})
         self.fields["date_realisation"].help_text = "Renseignée automatiquement à la date du jour quand l'action passe à « Terminée »."
         self.risques_caches = []
         if "portee" in self.fields:
@@ -62,6 +63,16 @@ class FormulaireAction(FormulaireBase):
             self.fields["structure"].help_text = "Pour une action générale : structure concernée."
         else:
             del self.fields["structure"]
+
+    def suggestions_responsables(self):
+        """Responsables déjà saisis sur les actions visibles par l'utilisateur et noms des utilisateurs actifs."""
+        actions = ActionPrevention.objects.exclude(responsable="")
+        if self.user is not None:
+            actions = actions.filter(filtre_actions(self.user))
+        noms = set(actions.values_list("responsable", flat=True))
+        for u in get_user_model().objects.filter(is_active=True):
+            noms.add(u.get_full_name() or u.get_username())
+        return sorted(noms, key=str.lower)
 
     def groupes_risques(self):
         """Risques proposés, regroupés par unité, avec leur état coché : [(unité, [(risque, coché), ...]), ...]."""

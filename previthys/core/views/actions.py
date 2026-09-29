@@ -48,7 +48,7 @@ class Liste(crud.Liste):
 
     def base(self):
         return (actions_visibles(self.request.user).annotate(nb_unites=Count("risques__unite", distinct=True))
-                .select_related("responsable", "structure", "categorie").prefetch_related("risques__unite", "risques__categorie"))
+                .select_related("structure", "categorie").prefetch_related("risques__unite", "risques__categorie"))
 
     # Deux filtres combinables, dans l'adresse : ?portee=...&categorie=<id>|aucune
     def portee(self):
@@ -130,7 +130,7 @@ class Liste(crud.Liste):
                 danger = format_html('{}<br><small class="text-body-secondary">{} risques</small>', categories[0], len(risques))
             else:
                 danger = "%d risques" % len(risques)
-        responsable = (o.responsable.get_full_name() or o.responsable.get_username()) if o.responsable else ""
+        responsable = o.responsable
         return [o.pk, (portee, tri_portee), danger, linebreaksbr(o.description),
                 (o.categorie.nom if o.categorie else "", "%05d" % o.categorie.ordre if o.categorie else "99999"), responsable,
                 (o.echeance.strftime("%d/%m/%Y") if o.echeance else "", o.echeance.isoformat() if o.echeance else "9999-12-31"),

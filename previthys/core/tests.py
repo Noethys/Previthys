@@ -160,7 +160,7 @@ class VersionsEtExportTests(BaseTest):
         self.assertEqual(VersionDuerp.objects.count(), 0)
 
     def test_export_xlsx(self):
-        ActionPrevention.objects.create(risque=self.risque, description="Formation", responsable=self.admin, echeance=datetime.date(2030, 1, 1))
+        ActionPrevention.objects.create(risque=self.risque, description="Formation", responsable="Ada Admin", echeance=datetime.date(2030, 1, 1))
         r = self.client.get(reverse("export_xlsx"))
         self.assertEqual(r.status_code, 200)
         self.assertIn("spreadsheetml", r["Content-Type"])

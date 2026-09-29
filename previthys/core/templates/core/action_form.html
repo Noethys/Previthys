@@ -66,6 +66,7 @@
 
       {% if form.structure %}<div id="bloc-structure">{% include "core/_champ_ligne.html" with field=form.structure %}</div>{% endif %}
       {% include "core/_champ_ligne.html" with field=form.responsable %}
+      {% include "core/_responsables.html" with noms=form.suggestions_responsables %}
       <div class="row mb-3">
         <label class="col-md-3 col-form-label" for="{{ form.echeance.id_for_label }}">{{ form.echeance.label }}</label>
         <div class="col-md-3">{{ form.echeance }}{% for e in form.echeance.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>

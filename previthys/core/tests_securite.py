@@ -48,7 +48,7 @@ class InjectionExcelTests(BaseSecurite):
     def test_les_textes_saisis_ne_deviennent_pas_des_formules(self):
         u = UniteTravail.objects.create(nom=self.FORMULE)
         r = Risque.objects.create(unite=u, categorie=self.categorie, danger=self.FORMULE, situation="=1+1", mesures_existantes="=SUM(A1)", frequence=1, gravite=1, maitrise=1)
-        ActionPrevention.objects.create(risque=r, description=self.FORMULE, responsable=None)
+        ActionPrevention.objects.create(risque=r, description=self.FORMULE, responsable=self.FORMULE)
         self.client.force_login(self.root)
         wb = load_workbook(BytesIO(self.client.get(reverse("export_xlsx")).content))
         for ws in wb.worksheets:

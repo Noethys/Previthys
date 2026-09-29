@@ -228,3 +228,15 @@ class CategoriesActionsTests(Base):
             call_command("importer_duerp", f.name, stdout=StringIO())
         self.assertEqual(ActionPrevention.objects.get(description="A1").categorie.nom, "Formation")
         self.assertTrue(CategorieAction.objects.filter(nom="Nouvelle").exists())
+
+
+class ResponsableTests(Base):
+    def test_responsable_texte_libre_et_suggestions(self):
+        self.client.post(reverse("actions_ajouter"), {"portee": "risques", "risques": [self.rps_voirie.pk], "description": "Formation",
+                                                      "statut": "a_faire", "responsable": "Service RH (M. Martin)"})
+        self.assertEqual(ActionPrevention.objects.get(description="Formation").responsable, "Service RH (M. Martin)")
+        ActionPrevention.objects.create(risque=self.rps_b, description="Action B", responsable="Pilote de B")
+        self.client.force_login(self.user_a)
+        page = self.client.get(reverse("actions_ajouter")).content.decode()
+        self.assertIn('<option value="Service RH (M. Martin)">', page)
+        self.assertNotIn("Pilote de B", page)   # pas de fuite des responsables d'une autre structure

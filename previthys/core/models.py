@@ -197,7 +197,7 @@ class ActionPrevention(models.Model):
                                             "Pour les autres actions, déduite des unités des risques.")
     description = models.TextField("Action de prévention")
     categorie = models.ForeignKey(CategorieAction, verbose_name="Catégorie", related_name="actions", on_delete=models.PROTECT, blank=True, null=True)
-    responsable = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Responsable", on_delete=models.SET_NULL, blank=True, null=True)
+    responsable = models.CharField("Responsable", max_length=150, blank=True, help_text="Personne ou service qui pilote l'action (texte libre).")
     echeance = models.DateField("Échéance", blank=True, null=True)
     duree = models.CharField("Durée", max_length=100, blank=True)
     cout = models.DecimalField("Coût", max_digits=12, decimal_places=2, blank=True, null=True, validators=[MinValueValidator(0)])

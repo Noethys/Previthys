@@ -6,7 +6,8 @@
  */
 
 /* Initialisation des listes DataTables.
-   Le tri, le nombre de lignes et les colonnes masquées sont mémorisés par liste dans le navigateur. */
+   Le tri, le nombre de lignes et les colonnes masquées sont mémorisés par liste dans le navigateur.
+   Tant que l'utilisateur n'a pas choisi ses colonnes, celles marquées « masquee-par-defaut » sont masquées. */
 (function ($) {
   var LANGUE = {
     buttons: {colvis: "Colonnes", excel: "Excel", copy: "Copier", pageLength: {"-1": "Tout afficher", _: "Afficher %d lignes"}},
@@ -47,7 +48,9 @@
         columnDefs: [{orderable: false, searchable: false, targets: "noorder"}],
         language: $.extend(true, {}, LANGUE, {emptyTable: table.dataset.vide || LANGUE.emptyTable})
       });
-      if (pref.masquees && pref.masquees.length) { dt.columns(pref.masquees).visible(false); }
+      // Colonnes masquées : choix de l'utilisateur s'il en a fait un (bouton « Colonnes »), sinon masquage par défaut de la liste
+      if (Array.isArray(pref.masquees)) { dt.columns(pref.masquees).visible(false); }
+      else { dt.columns(".masquee-par-defaut").visible(false); }
       function memoriser(cle_pref, valeur) { var p = lire(cle); p[cle_pref] = valeur; ecrire(cle, p); }
       dt.on("length.dt", function (e, settings, len) { memoriser("longueur", len); });
       dt.on("order.dt", function () { var o = dt.order(); if (o.length) { memoriser("ordre", o[0]); } });

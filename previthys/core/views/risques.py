@@ -54,6 +54,7 @@ class Liste(crud.Liste):
     titre = "Risques"
     description = NOTE_COTATION
     colonnes = ["ID", "Unité", "Danger", "Catégorie", "Fréquence", "Gravité", "Maîtrise", "Niveau", "Actions de prévention", "Fichiers"]
+    colonnes_masquees = ["Fréquence", "Gravité", "Maîtrise"]   # la cotation reste visible dans la colonne Niveau
     ordre = "7,desc"
     url_ajouter, url_modifier, url_supprimer = "risques_ajouter", "risques_modifier", "risques_supprimer"
 
@@ -90,7 +91,7 @@ class Modifier(AjoutPiecesJointes, crud.Modifier):
             ctx["actions_risque"] = [
                 (a, badge_statut(a), FormulaireActionRisque(instance=a, user=self.request.user, auto_id="id_action%d_%%s" % a.pk),
                  len(a.risques.all()), sorted({r.unite.nom for r in a.risques.all() if r.pk in visibles}))
-                for a in self.object.actions.select_related("responsable", "categorie").prefetch_related("risques__unite")]
+                for a in self.object.actions.select_related("categorie").prefetch_related("risques__unite")]
             ctx["form_nouvelle_action"] = FormulaireActionRisque(user=self.request.user, auto_id="id_nouvelle_action_%s")
             if self.request.user.has_perm("core.change_actionprevention"):
                 ctx["actions_rattachables"] = (ActionPrevention.objects.filter(filtre_actions(self.request.user)).filter(risques__isnull=False)

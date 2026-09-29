@@ -26,7 +26,7 @@
            data-liste="{{ nom_liste }}" data-ordre="{{ ordre }}" data-titre="{{ PREVITHYS_ORGANISATION }} - {{ titre }}" data-vide="{{ vide }}">
       <thead>
         <tr>
-          {% for c in colonnes %}<th data-name="{{ c|slugify }}">{{ c }}</th>{% endfor %}
+          {% for c in colonnes %}<th data-name="{{ c|slugify }}"{% if c in colonnes_masquees %} class="masquee-par-defaut"{% endif %}>{{ c }}</th>{% endfor %}
           {% if colonne_actions %}<th data-name="actions" class="noorder noexport">Actions</th>{% endif %}
         </tr>
       </thead>

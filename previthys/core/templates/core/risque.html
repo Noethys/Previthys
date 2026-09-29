@@ -31,7 +31,7 @@
                       <details class="unites-action d-inline"><summary>voir les unités</summary><small class="d-block text-body-secondary">{{ unites|join:", " }}</small></details>
                     {% endif %}
                   </td>
-                  <td>{% if action.responsable %}{{ action.responsable.get_full_name|default:action.responsable.get_username }}{% endif %}</td>
+                  <td>{{ action.responsable }}</td>
                   <td class="text-nowrap">{{ action.echeance|date:"d/m/Y" }}</td>
                   <td>{{ action.duree }}</td>
                   <td class="text-end text-nowrap">{{ action.cout_affiche }}</td>
@@ -67,6 +67,7 @@
   </div>
 
   {% if object %}
+    {% if form_nouvelle_action %}{% include "core/_responsables.html" with noms=form_nouvelle_action.suggestions_responsables %}{% endif %}
     {% if perms.core.add_actionprevention %}
       {% url 'risques_actions_ajouter' object.pk as url_action %}
       {% include "core/_modale_action.html" with action=None titre_modale="Ajouter une action de prévention" form_action=form_nouvelle_action url_action=url_action %}
