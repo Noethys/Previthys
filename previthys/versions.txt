@@ -1,3 +1,8 @@
+Version 1.2.5 (29/09/2026) :
+
+- Ajout de widgets au tableau de bord
+- Ajout d'une meilleure gestion des responsables des actions
+
 Version 1.2.4 (29/09/2026) :
 
 - Améliorations sur l'affichage et la modification des risques
