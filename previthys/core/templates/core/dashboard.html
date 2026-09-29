@@ -28,6 +28,50 @@
   </div>
 
   <div class="row">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Matrice gravité × fréquence</h2>
+        <p class="small text-body-secondary mb-2">Nombre de risques par case. La maîtrise entre aussi dans la cotation : une case peut réunir plusieurs niveaux (détail sous le nombre).</p>
+        <table class="table table-borderless matrice-risques mb-1">
+          <tbody>
+            {% for ligne in matrice.lignes %}
+              <tr>
+                <th class="text-end">{{ ligne.gravite }}<br><small class="text-body-secondary">{{ ligne.libelle }}</small></th>
+                {% for c in ligne.cases %}
+                  <td class="case {% if c.pire %}niveau-{{ c.pire }}{% else %}vide{% endif %}">
+                    {% if c.total %}<a href="{% url 'risques_liste' %}?gravite={{ c.gravite }}&amp;frequence={{ c.frequence }}" title="Voir ces {{ c.total }} risques">{{ c.total }}
+                      {% if c.detail|length > 1 %}<small class="d-block">{% for n, nb in c.detail %}<span class="pastille pastille-{{ n }}">{{ nb }}</span>{% endfor %}</small>{% endif %}</a>{% endif %}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+            <tr><th></th>{% for f, lib in matrice.frequences %}<th class="text-center">{{ f }}<br><small class="text-body-secondary">{{ lib }}</small></th>{% endfor %}</tr>
+          </tbody>
+        </table>
+        <div class="small text-center text-body-secondary">↑ Gravité · Fréquence → · couleur : niveau le plus élevé de la case · clic : liste des risques</div>
+      </div></div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Points de vigilance</h2>
+        <p class="small text-body-secondary mb-2">Risques moyens ou critiques sans action de prévention prévue ou en cours.</p>
+        {% if nbre_vigilance %}
+          <div class="alert alert-warning py-2 small mb-2"><b>{{ nbre_vigilance }} risque{{ nbre_vigilance|pluralize }} moyen{{ nbre_vigilance|pluralize }} ou critique{{ nbre_vigilance|pluralize }}</b> sans action en cours.</div>
+          <table class="table table-sm mb-2">
+            {% for r in vigilance %}
+              <tr><td>{% if perms.core.change_risque %}<a href="{% url 'risques_modifier' r.pk %}#actions">{{ r.danger|truncatechars:60 }}</a>{% else %}{{ r.danger|truncatechars:60 }}{% endif %}<br><small class="text-body-secondary">{{ r.unite.nom }}</small></td>
+                  <td class="text-end"><span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% else %}warning{% endif %}">{{ r.niveau|capfirst }} ({{ r.cotation }})</span></td></tr>
+            {% endfor %}
+          </table>
+          <a class="small" href="{% url 'risques_liste' %}?filtre=vigilance">Voir les {{ nbre_vigilance }} risques →</a>
+        {% else %}
+          <p class="text-success mb-0">Tous les risques moyens et critiques ont au moins une action en cours.</p>
+        {% endif %}
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row">
     <div class="col-lg-5 mb-3">
       <div class="card h-100"><div class="card-body">
         <h2 class="h6">Répartition des risques par niveau</h2>
@@ -54,6 +98,45 @@
           {% endfor %}
         </table>
         {% if perms.core.add_actionprevention %}<a class="btn btn-success btn-sm" href="{% url 'actions_ajouter' %}">Ajouter une action</a>{% endif %}
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Avancement du plan d'actions</h2>
+        {% with e=avancement.ensemble %}
+          {% if e.total %}
+            <div class="d-flex justify-content-between small mb-1"><span><b>Ensemble du plan</b> — {{ e.total }} action{{ e.total|pluralize }}</span><span>{{ e.pourcentage_terminees }} % terminées</span></div>
+            {% include "core/_pile_statuts.html" with pile=e %}
+            <div class="small my-2">{% for s in e.segments %}<span class="badge text-bg-{{ s.couleur }} me-1">{{ s.libelle }} : {{ s.n }}</span>{% endfor %}</div>
+            {% for c in avancement.categories %}
+              <div class="d-flex justify-content-between small mb-1 mt-2"><span>{{ c.libelle }}</span><span>{{ c.total }}</span></div>
+              {% include "core/_pile_statuts.html" with pile=c %}
+            {% endfor %}
+          {% else %}
+            <p class="text-body-secondary mb-0">Aucune action de prévention.</p>
+          {% endif %}
+        {% endwith %}
+      </div></div>
+    </div>
+    <div class="col-lg-6 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Actions à compléter</h2>
+        {% if a_completer.total %}
+          <p class="small text-body-secondary mb-2">Informations manquantes sur les {{ a_completer.total }} action{{ a_completer.total|pluralize }} en cours. Cliquez pour les afficher dans le plan d'actions.</p>
+          <div class="row g-2">
+            {% for m in a_completer.manques %}
+              <div class="col-6"><a class="kpi-mini d-block text-reset text-decoration-none" href="{% url 'actions_liste' %}?manque={{ m.code }}">
+                <div class="valeur {% if m.n %}text-{{ m.couleur }}{% else %}text-success{% endif %}">{{ m.n }}</div><div class="small">{{ m.libelle }}</div>
+                <div class="progress mt-1" style="height: 5px"><div class="progress-bar bg-{{ m.couleur }}" style="width: {{ m.pourcentage }}%"></div></div>
+              </a></div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-body-secondary mb-0">Aucune action en cours.</p>
+        {% endif %}
       </div></div>
     </div>
   </div>
@@ -88,6 +171,88 @@
         {% empty %}
           <p class="text-body-secondary mb-0">Aucun risque saisi.</p>
         {% endfor %}
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-7 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Unités de travail les plus exposées</h2>
+        <table class="table table-sm align-middle mb-1">
+          <thead><tr><th>Unité</th><th>Risques <small class="text-body-secondary">crit. / moy. / faib.</small></th><th class="text-center">Actions en cours</th><th class="text-end">Cotation max</th></tr></thead>
+          <tbody>
+            {% for l in tableau_unites.lignes %}
+              <tr><td>{{ l.unite.nom }}</td>
+                  <td class="text-nowrap">{% for n, nb in l.niveaux %}<span class="pastille pastille-{{ n }}" title="{{ n }}">{{ nb }}</span>{% endfor %}</td>
+                  <td class="text-center">{{ l.actions }}</td>
+                  <td class="text-end">{% if l.max %}<span class="badge text-bg-{% if l.max >= seuil_critique %}danger{% elif l.max >= seuil_moyen %}warning{% else %}success{% endif %}">{{ l.max }}</span>{% endif %}</td></tr>
+            {% empty %}
+              <tr><td class="text-body-secondary">Aucune unité de travail.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if tableau_unites.total > tableau_unites.lignes|length %}<a class="small" href="{% url 'unites_liste' %}">Voir les {{ tableau_unites.total }} unités →</a>{% endif %}
+      </div></div>
+    </div>
+    <div class="col-lg-5 mb-3">
+      <div class="card h-100"><div class="card-body">
+        <h2 class="h6">Budget de prévention</h2>
+        {% if budget.nb %}
+          <div class="row g-2 mb-2">
+            <div class="col-6"><div class="kpi-mini"><div class="valeur">{{ budget.prevu|floatformat:"0g" }} €</div><div class="small">prévus (actions en cours)</div></div></div>
+            <div class="col-6"><div class="kpi-mini"><div class="valeur text-success">{{ budget.realise|floatformat:"0g" }} €</div><div class="small">réalisés (actions terminées)</div></div></div>
+          </div>
+          <table class="table table-sm small mb-1">
+            <thead><tr><th>Catégorie</th><th class="text-end">Prévu</th><th class="text-end">Réalisé</th></tr></thead>
+            <tbody>{% for l in budget.lignes %}<tr><td>{{ l.libelle }}</td><td class="text-end">{% if l.prevu %}{{ l.prevu|floatformat:"0g" }} €{% else %}—{% endif %}</td><td class="text-end">{% if l.realise %}{{ l.realise|floatformat:"0g" }} €{% else %}—{% endif %}</td></tr>{% endfor %}</tbody>
+          </table>
+          <p class="small text-body-secondary mb-0">Somme des coûts saisis sur {{ budget.nb }} action{{ budget.nb|pluralize }}.</p>
+        {% else %}
+          <p class="text-body-secondary mb-0">Aucun coût saisi sur les actions de prévention.</p>
+        {% endif %}
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 mb-3">
+      <div class="card"><div class="card-body">
+        <h2 class="h6">Mise à jour du DUERP et réévaluations</h2>
+        <div class="row">
+          <div class="col-lg-5 mb-2">
+            {% if mise_a_jour.version %}
+              <div class="d-flex gap-3 align-items-center">
+                <div class="compte-a-rebours text-{{ mise_a_jour.couleur }}">{% if mise_a_jour.reste >= 0 %}{{ mise_a_jour.reste }}<small class="d-block">jours</small>{% else %}!{% endif %}</div>
+                <div class="small">Dernière version archivée : <b>{{ mise_a_jour.version }}</b> du {{ mise_a_jour.date|date:"d/m/Y" }}.<br>
+                  {% if mise_a_jour.reste >= 0 %}Prochaine mise à jour annuelle au plus tard le <b>{{ mise_a_jour.echeance|date:"d/m/Y" }}</b>.
+                  {% else %}<span class="text-danger">Mise à jour annuelle dépassée de {{ mise_a_jour.retard }} jours.</span>{% endif %}
+                  {% if perms.core.add_versionduerp %}<a href="{% url 'versions_ajouter' %}">Archiver une version</a>{% endif %}</div>
+              </div>
+            {% else %}
+              <div class="d-flex gap-3 align-items-center">
+                <div class="compte-a-rebours text-danger">!</div>
+                <div class="small"><b>Aucune version archivée.</b><br>Le DUERP doit être mis à jour au moins une fois par an et à chaque changement important.
+                  {% if perms.core.add_versionduerp %}<a href="{% url 'versions_ajouter' %}">Archiver la version actuelle</a>{% endif %}</div>
+              </div>
+            {% endif %}
+          </div>
+          <div class="col-lg-7">
+            {% if reevaluer %}
+              <div class="small mb-1"><b>{{ reevaluer|length }} risque{{ reevaluer|length|pluralize }}</b> à réévaluer : une action s'est terminée depuis leur dernière évaluation. Enregistrer la fiche d'un risque vaut réévaluation.</div>
+              {% if actions_terminees_recentes %}
+                <table class="table table-sm small mb-1">
+                  {% for a in actions_terminees_recentes %}
+                    <tr><td>{{ a.description|truncatechars:70 }}</td><td class="text-nowrap text-body-secondary">le {{ a.date_realisation|date:"d/m/Y" }}</td><td class="text-nowrap">{{ a.resume_unites }}</td></tr>
+                  {% endfor %}
+                </table>
+              {% endif %}
+              <a class="small" href="{% url 'risques_liste' %}?filtre=a_reevaluer">Voir les risques à réévaluer →</a>
+            {% else %}
+              <p class="small text-success mb-0">Aucun risque à réévaluer : les actions terminées sont antérieures à la dernière évaluation de leurs risques.</p>
+            {% endif %}
+          </div>
+        </div>
       </div></div>
     </div>
   </div>

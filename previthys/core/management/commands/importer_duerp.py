@@ -127,7 +127,7 @@ class Command(BaseCommand):
             risque = Risque.objects.create(
                 unite=unites[r["unite"]], categorie=categories[r["categorie"]], danger=r["danger"][:250],
                 situation=r.get("situation", ""), frequence=r["frequence"], gravite=r["gravite"], maitrise=r["maitrise"],
-                mesures_existantes=r.get("mesures_existantes", ""))
+                mesures_existantes=r.get("mesures_existantes", ""), date_evaluation=self.date(r.get("date_evaluation")))
             consigner(self.requete, "creation", risque, self.detail)
             bilan["risques"] += 1
 

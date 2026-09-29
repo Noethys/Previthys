@@ -1,0 +1,1 @@
+<div class="pile-statuts" role="img" aria-label="{% for s in pile.segments %}{{ s.libelle }} : {{ s.n }}{% if not forloop.last %}, {% endif %}{% endfor %}">{% for s in pile.segments %}<div class="bg-{{ s.couleur }}" style="width: {{ s.pourcentage }}%" title="{{ s.libelle }} : {{ s.n }}">{% if s.visible %}{{ s.n }}{% endif %}</div>{% endfor %}</div>

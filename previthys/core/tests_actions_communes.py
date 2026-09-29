@@ -240,3 +240,34 @@ class ResponsableTests(Base):
         page = self.client.get(reverse("actions_ajouter")).content.decode()
         self.assertIn('<option value="Service RH (M. Martin)">', page)
         self.assertNotIn("Pilote de B", page)   # pas de fuite des responsables d'une autre structure
+
+
+class TableauDeBordTests(Base):
+    def test_widgets_et_liens(self):
+        import datetime
+        from django.utils import timezone
+        ActionPrevention.objects.create(risque=self.rps_accueil, description="Faite", statut="terminee", date_realisation=timezone.localdate(), cout=500)
+        page = self.client.get(reverse("dashboard"))
+        self.assertEqual(page.status_code, 200)
+        for titre in ("Matrice gravité × fréquence", "Points de vigilance", "Avancement du plan d'actions", "Actions à compléter",
+                      "Unités de travail les plus exposées", "Budget de prévention", "Mise à jour du DUERP et réévaluations"):
+            self.assertContains(page, titre)
+        ctx = page.context
+        self.assertIn(self.rps_accueil, ctx["vigilance"])          # risque moyen dont la seule action est terminée
+        self.assertIn(self.rps_accueil, ctx["reevaluer"])          # action terminée, risque jamais réévalué depuis
+        self.assertEqual(ctx["budget"]["realise"], 500)
+        # enregistrer la fiche du risque = réévaluation
+        self.client.post(reverse("risques_modifier", args=[self.rps_accueil.pk]), {
+            "unite": self.accueil.pk, "categorie": self.cat.pk, "danger": self.rps_accueil.danger, "frequence": 7, "gravite": 4, "maitrise": 4})
+        self.rps_accueil.refresh_from_db()
+        self.assertEqual(self.rps_accueil.date_evaluation, timezone.localdate())
+        self.assertNotIn(self.rps_accueil, self.client.get(reverse("dashboard")).context["reevaluer"])
+
+    def test_filtres_des_listes(self):
+        ActionPrevention.objects.create(risque=self.rps_voirie, description="Sans échéance")
+        self.assertContains(self.client.get(reverse("risques_liste") + "?gravite=4&frequence=7"), "Agressions accueil")
+        self.assertNotContains(self.client.get(reverse("risques_liste") + "?gravite=4&frequence=7"), "Stress voirie")
+        vigilance = self.client.get(reverse("risques_liste") + "?filtre=vigilance").content.decode()
+        self.assertIn("Agressions accueil", vigilance)
+        self.assertNotIn("Stress voirie", vigilance)   # a une action en cours
+        self.assertContains(self.client.get(reverse("actions_liste") + "?manque=echeance"), "Sans échéance")

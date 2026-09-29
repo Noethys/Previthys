@@ -108,6 +108,8 @@ class Risque(models.Model):
     gravite = models.IntegerField("Gravité", choices=GRAVITE, default=1)
     maitrise = models.IntegerField("Maîtrise", choices=MAITRISE, default=10)
     mesures_existantes = models.TextField("Mesures existantes", blank=True)
+    date_evaluation = models.DateField("Dernière évaluation", blank=True, null=True,
+                                       help_text="Mise à jour à chaque enregistrement de la fiche du risque (cotation revue).")
 
     class Meta:
         verbose_name = "risque"

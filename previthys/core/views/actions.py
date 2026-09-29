@@ -68,8 +68,17 @@ class Liste(crud.Liste):
             return qs.filter(categorie__isnull=True)
         return qs.filter(categorie_id=int(categorie)) if categorie else qs
 
+    MANQUES = {"echeance": ("sans échéance", {"echeance__isnull": True}), "responsable": ("sans responsable", {"responsable": ""}),
+               "categorie": ("sans catégorie", {"categorie__isnull": True}), "cout": ("sans coût estimé", {"cout__isnull": True})}
+
+    def manque(self):
+        return self.request.GET.get("manque") if self.request.GET.get("manque") in self.MANQUES else ""
+
     def get_queryset(self):
-        return self.filtrer_categorie(self.filtrer_portee(self.base(), self.portee()), self.categorie())
+        qs = self.filtrer_categorie(self.filtrer_portee(self.base(), self.portee()), self.categorie())
+        if self.manque():   # lien « Actions à compléter » du tableau de bord : actions en cours à qui il manque une information
+            qs = qs.exclude(statut="terminee").filter(**self.MANQUES[self.manque()][1])
+        return qs
 
     def url(self, portee, categorie):
         parametres = urlencode([(k, v) for k, v in (("portee", portee), ("categorie", categorie)) if v])
@@ -90,7 +99,11 @@ class Liste(crud.Liste):
                                for c in CategorieAction.objects.all()]
         if par_categorie.get(None):
             boutons_categories.append({"libelle": "Non classées", "nombre": par_categorie[None], "actif": categorie == "aucune", "url": self.url(portee, "aucune")})
-        return [
+        filtres = []
+        if self.manque():
+            filtres.append({"titre": "À compléter", "boutons": [{"libelle": "Actions en cours %s  ✕" % self.MANQUES[self.manque()][0],
+                                                                  "nombre": len(self.object_list), "actif": True, "url": self.url(portee, categorie)}]})
+        return filtres + [
             {"titre": "Portée", "boutons": [{"libelle": lib, "nombre": comptes[cle], "actif": cle == portee, "url": self.url(cle, categorie)}
                                             for cle, lib in self.PORTEES]},
             {"titre": "Catégorie", "boutons": boutons_categories},

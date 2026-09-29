@@ -4,6 +4,8 @@
 #  Distribué sous licence GNU GPL.
 
 from django.db.models import Count
+from django.urls import reverse
+from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 from django.utils.text import Truncator
 
@@ -11,6 +13,7 @@ from core.forms.actions import FormulaireActionRisque
 from core.forms.risques import FormulaireRisque
 from core.models import NOTE_COTATION, ActionPrevention, PieceJointe, Risque, actions_propres
 from core.utils import filtre_actions, filtre_structure
+from core.utils import tableau_de_bord as tdb
 from core.utils.journal import consigner
 from core.views import crud
 
@@ -42,6 +45,7 @@ class AjoutPiecesJointes:
     """Commun à l'ajout et à la modification : enregistre les fichiers déposés dans le formulaire."""
 
     def form_valid(self, form):
+        form.instance.date_evaluation = timezone.localdate()   # enregistrer la fiche = cotation revue (voir « risques à réévaluer »)
         reponse = super().form_valid(form)
         for fichier in form.cleaned_data.get("pieces_jointes", []):
             piece = PieceJointe.objects.create(risque=self.object, fichier=fichier, nom_original=fichier.name, taille=fichier.size, ajoute_par=self.request.user)
@@ -59,7 +63,35 @@ class Liste(crud.Liste):
     url_ajouter, url_modifier, url_supprimer = "risques_ajouter", "risques_modifier", "risques_supprimer"
 
     def get_queryset(self):
-        return Risque.objects.select_related("unite", "categorie").prefetch_related("actions__risques").annotate(nbre_pieces_jointes=Count("pieces_jointes")).filter(filtre_structure(self.request.user, "unite__"))
+        qs = (Risque.objects.select_related("unite", "categorie").prefetch_related("actions__risques")
+              .annotate(nbre_pieces_jointes=Count("pieces_jointes")).filter(filtre_structure(self.request.user, "unite__")))
+        g, f = self.request.GET.get("gravite", ""), self.request.GET.get("frequence", "")
+        if g.isdigit() and f.isdigit():
+            qs = qs.filter(gravite=int(g), frequence=int(f))
+        filtre = self.filtre()
+        if filtre == "vigilance":
+            return tdb.sans_action(qs)
+        if filtre == "a_reevaluer":
+            return tdb.a_reevaluer(qs)
+        return qs
+
+    FILTRES = {"vigilance": "Moyens ou critiques sans action en cours", "a_reevaluer": "À réévaluer après une action terminée"}
+
+    def filtre(self):
+        return self.request.GET.get("filtre") if self.request.GET.get("filtre") in self.FILTRES else ""
+
+    def filtres(self):
+        """Filtre actif venant du tableau de bord (case de la matrice, points de vigilance, risques à réévaluer)."""
+        actifs = []
+        g, f = self.request.GET.get("gravite", ""), self.request.GET.get("frequence", "")
+        if g.isdigit() and f.isdigit():
+            actifs.append("Gravité %s × fréquence %s" % (g, f))
+        if self.filtre():
+            actifs.append(self.FILTRES[self.filtre()])
+        if not actifs:
+            return []
+        n = len(self.object_list)
+        return [{"titre": "Filtre", "boutons": [{"libelle": " · ".join(actifs) + "  ✕", "nombre": n, "actif": True, "url": reverse("risques_liste")}]}]
 
     def cellules(self, o):
         return [o.pk, o.unite.nom, o.danger, o.categorie.nom, o.frequence, o.gravite, o.maitrise, (badge_niveau(o), o.cotation), (liste_actions(o), len(o.actions.all())), o.nbre_pieces_jointes]
@@ -82,6 +114,8 @@ class Modifier(AjoutPiecesJointes, crud.Modifier):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        if self.object.date_evaluation:
+            ctx["description"] = "Dernière évaluation le %s. Enregistrer la fiche vaut réévaluation du risque." % self.object.date_evaluation.strftime("%d/%m/%Y")
         ctx["pieces_jointes"] = self.object.pieces_jointes.select_related("ajoute_par").all()
         if self.request.user.has_perm("core.view_actionprevention"):
             # Un formulaire prérempli par action (fenêtre « Modifier ») et un formulaire vierge (fenêtre « Ajouter »).

@@ -59,3 +59,19 @@ table.table-document th:nth-child(5), table.table-document td:nth-child(5) { wid
 .liste-risques label:hover { background: #f8f9fa; }
 details.unites-action summary { display: inline; cursor: pointer; font-size: .875rem; color: var(--bs-link-color); }
 .categorie-action { background: #f1f3f5; color: #495057; border: 1px solid #ced4da; font-weight: 500; }
+
+/* Tableau de bord : matrice gravité × fréquence, barres de statut, mini-indicateurs */
+table.matrice-risques th { font-size: .8rem; vertical-align: middle; padding: .3rem; }
+table.matrice-risques td.case { text-align: center; vertical-align: middle; height: 52px; width: 22%; border: 2px solid #fff; padding: .2rem; }
+table.matrice-risques td.case a { color: inherit; text-decoration: none; font-size: 1.05rem; font-weight: 700; display: block; }
+table.matrice-risques td.vide { background: #f1f3f5; }
+.pastille { display: inline-block; min-width: 22px; padding: 0 4px; margin: 0 1px; border-radius: 3px; color: #fff; font-size: .7rem; font-weight: 700; text-align: center; }
+.pastille-critique { background: #dc3545; } .pastille-moyen { background: #d39e00; } .pastille-faible { background: #28a745; }
+td.case .pastille { border: 1px solid rgba(255,255,255,.7); }
+.pile-statuts { display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: #e9ecef; font-size: .72rem; color: #fff; font-weight: 600; }
+.pile-statuts > div { display: flex; align-items: center; justify-content: center; white-space: nowrap; }
+.kpi-mini { border: 1px solid var(--bs-border-color); border-radius: .5rem; padding: .6rem .8rem; }
+a.kpi-mini:hover { background: #f8f9fa; }
+.kpi-mini .valeur { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.compte-a-rebours { font-size: 2rem; font-weight: 700; line-height: 1; text-align: center; min-width: 60px; }
+.compte-a-rebours small { font-size: .7rem; font-weight: 400; }
