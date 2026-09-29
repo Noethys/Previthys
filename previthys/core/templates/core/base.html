@@ -30,6 +30,7 @@
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Prévention</a>
           <div class="dropdown-menu">
             <a class="dropdown-item" href="{% url 'actions_liste' %}">Plan d'actions</a>
+            {% if perms.core.view_categorieaction %}<a class="dropdown-item" href="{% url 'categories_actions_liste' %}">Catégories d'actions</a>{% endif %}
             <a class="dropdown-item" href="{% url 'versions_liste' %}">Versions archivées</a>
           </div>
         </li>

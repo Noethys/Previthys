@@ -63,6 +63,8 @@ def decrire_modifications(form):
         ancien = valeur_affichable(model, nom, form.initial.get(nom), est_initial=True)
         nouveau = valeur_affichable(model, nom, form.cleaned_data.get(nom))
         lignes.append("%s : %s → %s" % (label, ancien, nouveau))
+    if getattr(form, "detail_supplementaire", ""):
+        lignes.append(form.detail_supplementaire)   # ex. changement des risques d'une action (lien plusieurs-à-plusieurs)
     return "\n".join(lignes)
 
 

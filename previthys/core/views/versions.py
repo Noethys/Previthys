@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from core.forms.versions import FormulaireVersion
 from core.models import VersionDuerp
-from core.utils import construire_donnees, filtre_structure
+from core.utils import construire_donnees, construire_mesures_generales, filtre_structure
 from core.views import crud
 
 
@@ -43,6 +43,7 @@ class Ajouter(crud.Ajouter):
         form.instance.auteur = self.request.user
         form.instance.numero = (derniere.numero if derniere else 0) + 1
         form.instance.donnees = construire_donnees(self.request.user, form.cleaned_data.get("structure"))
+        form.instance.mesures_generales = construire_mesures_generales(self.request.user, form.cleaned_data.get("structure"))
         return super().form_valid(form)
 
 

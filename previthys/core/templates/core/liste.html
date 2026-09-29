@@ -14,6 +14,14 @@
     {% if url_ajouter %}<a class="btn btn-success mb-2" href="{{ url_ajouter }}">{{ libelle_ajouter }}</a>{% endif %}
   </div>
   <div class="card card-body">
+    {% for groupe in filtres %}
+      <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+        {% if groupe.titre %}<span class="small text-body-secondary">{{ groupe.titre }}</span>{% endif %}
+        <div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="{{ groupe.titre|default:'Filtrer la liste' }}">
+          {% for f in groupe.boutons %}<a class="btn {% if f.actif %}btn-dark{% else %}btn-outline-secondary{% endif %}" href="{{ f.url }}"{% if f.actif %} aria-current="page"{% endif %}>{{ f.libelle }} <span class="badge {% if f.actif %}text-bg-light{% else %}text-bg-secondary{% endif %}">{{ f.nombre }}</span></a>{% endfor %}
+        </div>
+      </div>
+    {% endfor %}
     <table id="dt_{{ nom_liste }}" class="display datatable table table-striped table-bordered" style="width:100%"
            data-liste="{{ nom_liste }}" data-ordre="{{ ordre }}" data-titre="{{ PREVITHYS_ORGANISATION }} - {{ titre }}" data-vide="{{ vide }}">
       <thead>

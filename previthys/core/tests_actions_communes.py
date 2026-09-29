@@ -1,0 +1,230 @@
+"""Tests des actions générales (sans risque) et communes (plusieurs risques / plusieurs unités)."""
+#  -*- coding: utf-8 -*-
+#  Copyright (c) 2026 Ivan LUCAS.
+#  Previthys, application de gestion du DUERP (Document Unique d’Évaluation des Risques Professionnels).
+#  Distribué sous licence GNU GPL.
+
+import json
+import tempfile
+import zipfile
+from io import BytesIO, StringIO
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.core.management import call_command
+from django.test import TestCase
+from django.urls import reverse
+from openpyxl import load_workbook
+
+from core.models import ActionPrevention, CategorieAction, CategorieRisque, JournalAudit, Risque, Structure, UniteTravail, VersionDuerp
+
+User = get_user_model()
+
+
+class Base(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        call_command("creer_groupes", verbosity=0)
+        cls.struct_a = Structure.objects.create(nom="Mairie A")
+        cls.struct_b = Structure.objects.create(nom="Mairie B")
+        cls.root = User.objects.create_superuser("root", password="x")
+        cls.user_a = User.objects.create_user("user_a", password="x")
+        cls.user_a.groups.add(Group.objects.get(name="Previthys - administrateur"))
+        cls.user_a.structures.add(cls.struct_a)
+        cls.cat = CategorieRisque.objects.get(nom="Risques psychosociaux")
+        cls.voirie = UniteTravail.objects.create(nom="Voirie", structure=cls.struct_a)
+        cls.accueil = UniteTravail.objects.create(nom="Accueil", structure=cls.struct_a)
+        cls.ecole_b = UniteTravail.objects.create(nom="École B", structure=cls.struct_b)
+        cls.rps_voirie = Risque.objects.create(unite=cls.voirie, categorie=cls.cat, danger="Stress voirie", frequence=4, gravite=4, maitrise=4)
+        cls.rps_accueil = Risque.objects.create(unite=cls.accueil, categorie=cls.cat, danger="Agressions accueil", frequence=7, gravite=4, maitrise=4)
+        cls.rps_b = Risque.objects.create(unite=cls.ecole_b, categorie=cls.cat, danger="Stress école B", frequence=4, gravite=4, maitrise=4)
+
+    def setUp(self):
+        self.client.force_login(self.root)
+
+
+class SaisieTests(Base):
+    def test_action_commune_une_seule_action_pour_plusieurs_unites(self):
+        self.client.post(reverse("actions_ajouter"), {"portee": "risques", "risques": [self.rps_voirie.pk, self.rps_accueil.pk],
+                                                      "description": "Formation stress", "statut": "a_faire", "cout": "1100"})
+        action = ActionPrevention.objects.get(description="Formation stress")
+        self.assertEqual(set(action.risques.all()), {self.rps_voirie, self.rps_accueil})
+        self.assertTrue(action.est_commune)
+        self.assertEqual(action.structure, self.struct_a)   # déduite des unités
+        for risque in (self.rps_voirie, self.rps_accueil):   # visible sur la fiche de chaque risque
+            self.assertContains(self.client.get(reverse("risques_modifier", args=[risque.pk])), "Commune à 2 unités")
+        self.assertContains(self.client.get(reverse("actions_liste")), "Commune à 2 unités")
+
+    def test_action_generale_sans_risque(self):
+        self.client.post(reverse("actions_ajouter"), {"portee": "generale", "risques": [self.rps_voirie.pk], "structure": self.struct_a.pk,
+                                                      "description": "Utilisation de OpenGST", "statut": "a_faire"})
+        action = ActionPrevention.objects.get(description="Utilisation de OpenGST")
+        self.assertFalse(action.risques.exists())             # les cases cochées sont ignorées pour une action générale
+        self.assertEqual(action.structure, self.struct_a)
+        self.assertContains(self.client.get(reverse("actions_liste") + "?portee=generales"), "Utilisation de OpenGST")
+        self.assertNotContains(self.client.get(reverse("actions_liste") + "?portee=communes"), "Utilisation de OpenGST")
+        document = self.client.get(reverse("document"))
+        self.assertContains(document, "Mesures générales de prévention")
+        self.assertContains(document, "Utilisation de OpenGST")
+
+    def test_portee_risques_sans_risque_coche_refusee(self):
+        r = self.client.post(reverse("actions_ajouter"), {"portee": "risques", "description": "Sans risque", "statut": "a_faire"})
+        self.assertContains(r, "Cochez au moins un risque")
+        self.assertFalse(ActionPrevention.objects.filter(description="Sans risque").exists())
+
+    def test_journal_indique_le_changement_de_risques(self):
+        action = ActionPrevention.objects.create(risque=self.rps_voirie, description="Former")
+        self.client.post(reverse("actions_modifier", args=[action.pk]), {"portee": "risques", "risques": [self.rps_voirie.pk, self.rps_accueil.pk],
+                                                                         "description": "Former", "statut": "a_faire"})
+        self.assertIn("Risques concernés : 1 → 2", JournalAudit.objects.filter(action="modification").latest("pk").detail)
+
+
+class FicheRisqueTests(Base):
+    def test_detacher_une_action_commune_la_conserve_pour_les_autres(self):
+        action = ActionPrevention.objects.create(risques=[self.rps_voirie, self.rps_accueil], description="Commune")
+        self.client.post(reverse("risques_actions_supprimer", args=[self.rps_voirie.pk, action.pk]))
+        self.assertEqual(list(ActionPrevention.objects.get(pk=action.pk).risques.all()), [self.rps_accueil])
+        # sur son dernier risque, le bouton supprime l'action
+        self.client.post(reverse("risques_actions_supprimer", args=[self.rps_accueil.pk, action.pk]))
+        self.assertFalse(ActionPrevention.objects.filter(pk=action.pk).exists())
+
+    def test_rattacher_une_action_existante(self):
+        action = ActionPrevention.objects.create(risque=self.rps_voirie, description="À partager")
+        page = self.client.get(reverse("risques_modifier", args=[self.rps_accueil.pk]))
+        self.assertContains(page, "Rattacher une action existante")
+        self.client.post(reverse("risques_actions_rattacher", args=[self.rps_accueil.pk]), {"action": action.pk})
+        self.assertEqual(action.risques.count(), 2)
+
+    def test_ajout_depuis_la_fiche_lie_l_action_au_risque(self):
+        self.client.post(reverse("risques_actions_ajouter", args=[self.rps_voirie.pk]), {"description": "Depuis la fiche", "statut": "a_faire"})
+        self.assertEqual(list(ActionPrevention.objects.get(description="Depuis la fiche").risques.all()), [self.rps_voirie])
+
+
+class SuppressionTests(Base):
+    def test_suppression_d_un_risque(self):
+        propre = ActionPrevention.objects.create(risque=self.rps_voirie, description="Propre")
+        commune = ActionPrevention.objects.create(risques=[self.rps_voirie, self.rps_accueil], description="Commune")
+        page = self.client.get(reverse("risques_supprimer", args=[self.rps_voirie.pk]))
+        self.assertContains(page, "1 action de prévention")
+        self.assertContains(page, "1 action commune détachée")
+        self.client.post(reverse("risques_supprimer", args=[self.rps_voirie.pk]))
+        self.assertFalse(ActionPrevention.objects.filter(pk=propre.pk).exists())
+        self.assertEqual(list(ActionPrevention.objects.get(pk=commune.pk).risques.all()), [self.rps_accueil])
+
+    def test_suppression_d_une_unite_ne_laisse_pas_d_action_orpheline(self):
+        autre = Risque.objects.create(unite=self.voirie, categorie=self.cat, danger="Autre risque voirie", frequence=1, gravite=1, maitrise=1)
+        action = ActionPrevention.objects.create(risques=[self.rps_voirie, autre], description="Deux risques, même unité")
+        self.voirie.delete()
+        self.assertFalse(ActionPrevention.objects.filter(pk=action.pk).exists())   # ne devient pas une action générale
+
+
+class VisibiliteTests(Base):
+    def setUp(self):
+        self.client.force_login(self.user_a)
+
+    def test_actions_generales_par_structure(self):
+        ActionPrevention.objects.create(description="Générale A", structure=self.struct_a)
+        ActionPrevention.objects.create(description="Générale B", structure=self.struct_b)
+        ActionPrevention.objects.create(description="Générale pour tous")
+        liste = self.client.get(reverse("actions_liste")).content.decode()
+        self.assertIn("Générale A", liste)
+        self.assertIn("Générale pour tous", liste)
+        self.assertNotIn("Générale B", liste)
+        self.assertNotIn("Générale B", self.client.get(reverse("document")).content.decode())
+
+    def test_action_commune_a_deux_structures(self):
+        action = ActionPrevention.objects.create(risques=[self.rps_voirie, self.rps_b], description="Commune A et B")
+        liste = self.client.get(reverse("actions_liste")).content.decode()
+        self.assertIn("Commune A et B", liste)
+        self.assertNotIn("École B", liste)   # l'unité de l'autre structure n'est pas nommée
+        # l'enregistrement par un utilisateur de A conserve le risque de B, qu'il ne voit pas
+        self.client.post(reverse("actions_modifier", args=[action.pk]), {"portee": "risques", "risques": [self.rps_voirie.pk],
+                                                                         "description": "Commune A et B", "statut": "en_cours"})
+        self.assertEqual(set(action.risques.all()), {self.rps_voirie, self.rps_b})
+        # et elle ne peut pas devenir générale
+        r = self.client.post(reverse("actions_modifier", args=[action.pk]), {"portee": "generale", "description": "X", "statut": "a_faire"})
+        self.assertContains(r, "ne peut pas devenir une action générale")
+
+    def test_generale_d_une_autre_structure_inaccessible(self):
+        b = ActionPrevention.objects.create(description="Générale B", structure=self.struct_b)
+        self.assertEqual(self.client.get(reverse("actions_modifier", args=[b.pk])).status_code, 404)
+
+
+class ArchivesEtExportTests(Base):
+    def test_version_archivee_et_export(self):
+        ActionPrevention.objects.create(description="Sensibilisation générale")
+        ActionPrevention.objects.create(risques=[self.rps_voirie, self.rps_accueil], description="Formation commune")
+        self.client.post(reverse("versions_ajouter"), {"commentaire": "Mise à jour annuelle"})
+        version = VersionDuerp.objects.get()
+        self.assertEqual([m["description"] for m in version.mesures_generales], ["Sensibilisation générale"])
+        self.assertContains(self.client.get(reverse("versions_document", args=[version.pk])), "Sensibilisation générale")
+        wb = load_workbook(BytesIO(self.client.get(reverse("export_xlsx")).content))
+        valeurs = [c.value for ligne in wb["Actions"].iter_rows() for c in ligne]
+        self.assertIn("Mesure générale", valeurs)
+        self.assertIn("Commune à 2 unités", valeurs)
+
+    def test_ancienne_archive_sans_mesures_generales(self):
+        version = VersionDuerp.objects.create(numero=1, commentaire="Ancienne", donnees=[])
+        self.assertEqual(self.client.get(reverse("versions_document", args=[version.pk])).status_code, 200)
+
+
+class ImportTests(TestCase):
+    def test_import_format_2(self):
+        donnees = {
+            "format": "previthys-import/2", "source": "test",
+            "unites": [{"nom": "U1"}, {"nom": "U2"}], "categories": [{"nom": "Autre"}],
+            "risques": [{"id": 1, "unite": "U1", "categorie": "Autre", "danger": "D1", "frequence": 4, "gravite": 4, "maitrise": 4},
+                        {"id": 2, "unite": "U2", "categorie": "Autre", "danger": "D2", "frequence": 4, "gravite": 4, "maitrise": 4}],
+            "actions": [{"description": "Commune", "risques": [1, 2], "cout": 1100}, {"description": "Générale", "risques": []},
+                        {"description": "Propre", "risques": [1]}],
+        }
+        with tempfile.NamedTemporaryFile(suffix=".zip") as f:
+            with zipfile.ZipFile(f.name, "w") as z:
+                z.writestr("donnees.json", json.dumps(donnees))
+            sortie = StringIO()
+            call_command("importer_duerp", f.name, stdout=sortie)
+        self.assertIn("dont 1 générales et 1 communes", sortie.getvalue())
+        self.assertEqual(ActionPrevention.objects.get(description="Commune").risques.count(), 2)
+        self.assertFalse(ActionPrevention.objects.get(description="Générale").risques.exists())
+
+
+class CategoriesActionsTests(Base):
+    def test_categories_par_defaut_et_droits_des_groupes(self):
+        self.assertEqual(list(CategorieAction.objects.values_list("nom", flat=True)),
+                         ["Formation", "Matériel", "Organisation", "Travaux", "Communication", "Autre"])
+        self.assertTrue(self.user_a.has_perm("core.change_categorieaction"))
+        self.client.force_login(self.user_a)
+        self.assertContains(self.client.get(reverse("categories_actions_liste")), "Formation")
+
+    def test_saisie_filtre_et_affichage(self):
+        formation = CategorieAction.objects.get(nom="Formation")
+        self.client.post(reverse("actions_ajouter"), {"portee": "risques", "risques": [self.rps_voirie.pk], "categorie": formation.pk,
+                                                      "description": "Formation stress", "statut": "a_faire"})
+        ActionPrevention.objects.create(risque=self.rps_voirie, description="Sans catégorie")
+        self.assertEqual(ActionPrevention.objects.get(description="Formation stress").categorie, formation)
+        filtree = self.client.get(reverse("actions_liste") + "?categorie=%d" % formation.pk).content.decode()
+        self.assertIn("Formation stress", filtree)
+        self.assertNotIn("Sans catégorie", filtree)
+        non_classees = self.client.get(reverse("actions_liste") + "?categorie=aucune").content.decode()
+        self.assertIn("Sans catégorie", non_classees)
+        self.assertNotIn("Formation stress", non_classees)
+        self.assertContains(self.client.get(reverse("risques_modifier", args=[self.rps_voirie.pk])), "categorie-action")
+        wb = load_workbook(BytesIO(self.client.get(reverse("export_xlsx")).content))
+        self.assertIn("Formation", [c.value for c in wb["Actions"]["J"]])
+
+    def test_categorie_utilisee_non_supprimable(self):
+        formation = CategorieAction.objects.get(nom="Formation")
+        ActionPrevention.objects.create(risque=self.rps_voirie, description="X", categorie=formation)
+        self.client.post(reverse("categories_actions_supprimer", args=[formation.pk]))
+        self.assertTrue(CategorieAction.objects.filter(pk=formation.pk).exists())
+
+    def test_import_avec_categorie(self):
+        donnees = {"format": "previthys-import/2", "unites": [{"nom": "U"}], "categories": [{"nom": "Autre"}],
+                   "risques": [{"id": 1, "unite": "U", "categorie": "Autre", "danger": "D", "frequence": 1, "gravite": 1, "maitrise": 1}],
+                   "actions": [{"description": "A1", "risques": [1], "categorie": "Formation"}, {"description": "A2", "risques": [], "categorie": "Nouvelle"}]}
+        with tempfile.NamedTemporaryFile(suffix=".zip") as f:
+            with zipfile.ZipFile(f.name, "w") as z:
+                z.writestr("donnees.json", json.dumps(donnees))
+            call_command("importer_duerp", f.name, stdout=StringIO())
+        self.assertEqual(ActionPrevention.objects.get(description="A1").categorie.nom, "Formation")
+        self.assertTrue(CategorieAction.objects.filter(nom="Nouvelle").exists())

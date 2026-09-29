@@ -10,7 +10,7 @@ from django.views.generic import View
 
 from core.utils.export_xlsx import generer_xlsx
 from core.models import VersionDuerp
-from core.utils import construire_donnees, filtre_structure
+from core.utils import construire_donnees, construire_mesures_generales, filtre_structure
 from core.views.crud import Lecture
 
 
@@ -21,13 +21,13 @@ class ExportXlsx(Lecture, View):
             version = VersionDuerp.objects.filter(filtre_structure(request.user), pk=pk).first()
             if not version:
                 raise Http404("Version introuvable")
-            donnees = version.donnees
+            donnees, generales = version.donnees, version.mesures_generales
             sous_titre = "%s - Version %d du %s - %s" % (organisation, version.numero, timezone.localtime(version.date).strftime("%d/%m/%Y"), version.commentaire)
             nom_fichier = "DUERP_version_%d.xlsx" % version.numero
         else:
-            donnees = construire_donnees(request.user)
+            donnees, generales = construire_donnees(request.user), construire_mesures_generales(request.user)
             sous_titre = "%s - Export du %s" % (organisation, timezone.localdate().strftime("%d/%m/%Y"))
             nom_fichier = "DUERP_%s.xlsx" % timezone.localdate().strftime("%Y-%m-%d")
-        reponse = HttpResponse(generer_xlsx(donnees, sous_titre), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        reponse = HttpResponse(generer_xlsx(donnees, sous_titre, generales), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         reponse["Content-Disposition"] = 'attachment; filename="%s"' % nom_fichier
         return reponse

@@ -273,7 +273,7 @@ class MesuresRealiseesTests(BaseTest):
         self.assertEqual(self.client.get(reverse("versions_export", args=[v.pk])).status_code, 200)
 
     def test_date_de_realisation_automatique_puis_effacee(self):
-        data = {"risque": self.risque.pk, "description": "X", "statut": "terminee"}
+        data = {"portee": "risques", "risques": self.risque.pk, "description": "X", "statut": "terminee"}
         self.client.post(reverse("actions_ajouter"), data)
         a = ActionPrevention.objects.get(description="X")
         self.assertEqual(a.date_realisation, datetime.date.today())
@@ -283,15 +283,15 @@ class MesuresRealiseesTests(BaseTest):
         self.assertIsNone(a.date_realisation)
 
     def test_date_saisie_conservee(self):
-        self.client.post(reverse("actions_ajouter"), {"risque": self.risque.pk, "description": "Y", "statut": "terminee", "date_realisation": "2026-01-15"})
+        self.client.post(reverse("actions_ajouter"), {"portee": "risques", "risques": self.risque.pk, "description": "Y", "statut": "terminee", "date_realisation": "2026-01-15"})
         self.assertEqual(ActionPrevention.objects.get(description="Y").date_realisation, datetime.date(2026, 1, 15))
 
     def test_invitation_a_reevaluer_apres_passage_a_terminee(self):
-        r = self.client.post(reverse("actions_modifier", args=[self.prevue.pk]), {"risque": self.risque.pk, "description": self.prevue.description, "statut": "terminee"}, follow=True)
+        r = self.client.post(reverse("actions_modifier", args=[self.prevue.pk]), {"portee": "risques", "risques": self.risque.pk, "description": self.prevue.description, "statut": "terminee"}, follow=True)
         self.assertContains(r, "Réévaluer le risque")
         self.assertContains(r, reverse("risques_modifier", args=[self.risque.pk]))
         # une modification qui ne change pas le statut n'invite pas à réévaluer
-        r = self.client.post(reverse("actions_modifier", args=[self.prevue.pk]), {"risque": self.risque.pk, "description": "Reformulée", "statut": "terminee"}, follow=True)
+        r = self.client.post(reverse("actions_modifier", args=[self.prevue.pk]), {"portee": "risques", "risques": self.risque.pk, "description": "Reformulée", "statut": "terminee"}, follow=True)
         self.assertNotContains(r, "Réévaluer le risque")
 
     def test_export_xlsx_mesures_et_date_de_realisation(self):

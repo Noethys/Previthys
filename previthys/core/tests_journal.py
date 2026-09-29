@@ -73,7 +73,7 @@ class ConsignationTests(BaseJournal):
 
     def test_creation_et_suppression_dune_action(self):
         risque = Risque.objects.create(unite=self.unite, categorie=self.categorie, danger="Chute", gravite=1, frequence=1)
-        self.client.post(reverse("actions_ajouter"), {"risque": risque.pk, "description": "Former le personnel", "statut": "a_faire"})
+        self.client.post(reverse("actions_ajouter"), {"portee": "risques", "risques": risque.pk, "description": "Former le personnel", "statut": "a_faire"})
         self.assertTrue(JournalAudit.objects.filter(modele="action de prévention", action="creation", objet_repr__icontains="Former").exists())
         action = ActionPrevention.objects.get(description="Former le personnel")
         self.client.post(reverse("actions_supprimer", args=[action.pk]))

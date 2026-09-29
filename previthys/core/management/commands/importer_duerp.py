@@ -8,9 +8,13 @@
     donnees.json   unités, catégories, risques, actions de prévention et références des photos
     photos/...     fichiers joints aux risques
 
+Format 1 : les actions sont décrites dans chaque risque (une action = un risque).
+Format 2 : en plus, une liste « actions » au premier niveau, dont chacune désigne ses risques par leur « id »
+(aucun = action générale, plusieurs = action commune).
+
 Exemples :
     python manage.py importer_duerp fichier.zip --simulation          # vérifie sans rien enregistrer
-    python manage.py importer_duerp fichier.zip --structure "Commune de XXXXXX" --utilisateur admin
+    python manage.py importer_duerp fichier.zip --structure "Commune de XXXXX" --utilisateur admin
 
 Tout est importé dans une seule transaction : en cas d'erreur, rien n'est enregistré.
 """
@@ -27,11 +31,11 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from core.models import ActionPrevention, CategorieRisque, PieceJointe, Risque, Structure, UniteTravail
+from core.models import ActionPrevention, CategorieAction, CategorieRisque, PieceJointe, Risque, Structure, UniteTravail
 from core.utils.fichiers import SIGNATURES
 from core.utils.journal import consigner
 
-FORMAT = "previthys-import/1"
+FORMATS = ("previthys-import/1", "previthys-import/2")
 
 
 class Simulation(Exception):
@@ -58,8 +62,8 @@ class Command(BaseCommand):
                 donnees = json.loads(archive.read("donnees.json").decode("utf-8"))
             except KeyError:
                 raise CommandError("Le paquet ne contient pas de fichier donnees.json.")
-            if donnees.get("format") != FORMAT:
-                raise CommandError("Format de paquet non reconnu (attendu : %s)." % FORMAT)
+            if donnees.get("format") not in FORMATS:
+                raise CommandError("Format de paquet non reconnu (attendus : %s)." % ", ".join(FORMATS))
 
             utilisateur = None
             if options["utilisateur"]:
@@ -88,8 +92,7 @@ class Command(BaseCommand):
     # -----------------------------------------------------------------------------------------------------------
 
     def importer(self, donnees, archive, options):
-        champs_action = {f.name for f in ActionPrevention._meta.get_fields()}
-        bilan = {"unites": 0, "categories_creees": [], "risques": 0, "actions": 0, "photos": 0}
+        bilan = {"unites": 0, "categories_creees": [], "risques": 0, "actions": 0, "generales": 0, "communes": 0, "photos": 0}
 
         structure = None
         if options["structure"]:
@@ -119,6 +122,7 @@ class Command(BaseCommand):
             unites[u["nom"]] = unite
             bilan["unites"] += 1
 
+        risques_par_id = {}
         for r in donnees["risques"]:
             risque = Risque.objects.create(
                 unite=unites[r["unite"]], categorie=categories[r["categorie"]], danger=r["danger"][:250],
@@ -127,24 +131,9 @@ class Command(BaseCommand):
             consigner(self.requete, "creation", risque, self.detail)
             bilan["risques"] += 1
 
-            for a in r.get("actions", []):
-                description = a["description"]
-                valeurs = {"statut": a.get("statut", "a_faire"),
-                           "echeance": self.date(a.get("echeance")), "date_realisation": self.date(a.get("date_realisation"))}
-                # Durée et coût : champs dédiés s'ils existent dans cette version de Previthys, sinon dans le texte
-                if a.get("duree"):
-                    if "duree" in champs_action:
-                        valeurs["duree"] = a["duree"][:100]
-                    else:
-                        description += "\nDurée : %s" % a["duree"]
-                if a.get("cout") is not None:
-                    if "cout" in champs_action:
-                        valeurs["cout"] = Decimal(str(a["cout"]))
-                    else:
-                        description += "\nCoût : %s €" % ("%.2f" % a["cout"]).replace(".", ",")
-                action = ActionPrevention.objects.create(risque=risque, description=description, **valeurs)
-                consigner(self.requete, "creation", action, self.detail)
-                bilan["actions"] += 1
+            risques_par_id[r.get("id")] = risque
+            for a in r.get("actions", []):          # format 1 : action propre à ce risque
+                self.creer_action(a, [risque], None, bilan)
 
             for p in r.get("pieces_jointes", []):
                 contenu = archive.read(p["fichier"])
@@ -156,7 +145,34 @@ class Command(BaseCommand):
                 self.fichiers_ecrits.append(piece.fichier)
                 consigner(self.requete, "creation", piece, "Ajoutée au risque « %s » (%s)" % (risque.danger, self.detail))
                 bilan["photos"] += 1
+
+        # Format 2 : actions désignant leurs risques (aucun = générale, plusieurs = commune)
+        for a in donnees.get("actions", []):
+            try:
+                risques = [risques_par_id[i] for i in a.get("risques", [])]
+            except KeyError as e:
+                raise CommandError("Action « %s » : risque %s introuvable dans le paquet." % (a["description"][:60], e))
+            self.creer_action(a, risques, structure, bilan)
         return bilan
+
+    def creer_action(self, a, risques, structure, bilan):
+        valeurs = {"statut": a.get("statut", "a_faire"), "duree": (a.get("duree") or "")[:100],
+                   "echeance": self.date(a.get("echeance")), "date_realisation": self.date(a.get("date_realisation"))}
+        if a.get("cout") is not None:
+            valeurs["cout"] = Decimal(str(a["cout"]))
+        if not risques:
+            valeurs["structure"] = structure   # action générale : structure de l'import
+        if a.get("categorie"):
+            valeurs["categorie"], cree = CategorieAction.objects.get_or_create(nom=a["categorie"], defaults={"ordre": 100})
+            if cree:
+                bilan["categories_creees"].append(a["categorie"] + " (actions)")
+        action = ActionPrevention.objects.create(risques=risques, description=a["description"], **valeurs)
+        consigner(self.requete, "creation", action, self.detail)
+        bilan["actions"] += 1
+        if not risques:
+            bilan["generales"] += 1
+        elif action.est_commune:
+            bilan["communes"] += 1
 
     @staticmethod
     def date(valeur):
@@ -165,7 +181,7 @@ class Command(BaseCommand):
     def afficher(self, bilan):
         self.stdout.write("Unités de travail : %d" % bilan["unites"])
         self.stdout.write("Risques : %d" % bilan["risques"])
-        self.stdout.write("Actions de prévention : %d" % bilan["actions"])
+        self.stdout.write("Actions de prévention : %d (dont %d générales et %d communes à plusieurs unités)" % (bilan["actions"], bilan["generales"], bilan["communes"]))
         self.stdout.write("Photos : %d" % bilan["photos"])
         if bilan["categories_creees"]:
             self.stdout.write("Catégories créées : %s" % ", ".join(bilan["categories_creees"]))

@@ -8,8 +8,8 @@ Les fonctions légères sont réexportées ici. L'export Excel reste dans `core.
 #  Previthys, application de gestion du DUERP (Document Unique d’Évaluation des Risques Professionnels).
 #  Distribué sous licence GNU GPL.
 
-from core.utils.donnees import construire_donnees, normaliser_donnees
+from core.utils.donnees import construire_donnees, construire_mesures_generales, normaliser_donnees
 from core.utils.matrice import repartition_par_categorie, repartition_par_niveau
-from core.utils.structures import filtre_structure
+from core.utils.structures import filtre_actions, filtre_structure
 
-__all__ = ["construire_donnees", "filtre_structure", "normaliser_donnees", "repartition_par_categorie", "repartition_par_niveau"]
+__all__ = ["construire_donnees", "construire_mesures_generales", "filtre_actions", "filtre_structure", "normaliser_donnees", "repartition_par_categorie", "repartition_par_niveau"]

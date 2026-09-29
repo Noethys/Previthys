@@ -50,6 +50,11 @@ class Liste(AccesDuerp, ListView):
     def actions_supplementaires(self, obj):
         return []  # liste de (libellé, url)
 
+    def filtres(self):
+        """Rangées de boutons de filtre au-dessus du tableau :
+        [{"titre": "...", "boutons": [{"libelle", "nombre", "url", "actif"}, ...]}, ...]"""
+        return []
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         lignes = []
@@ -65,7 +70,7 @@ class Liste(AccesDuerp, ListView):
             "lignes": lignes, "titre": self.titre, "description": self.description, "colonnes": self.colonnes,
             "ordre": self.ordre, "vide": self.vide, "nom_liste": self.model._meta.model_name,
             "url_ajouter": reverse(self.url_ajouter) if self.url_ajouter and _perm(self, "add") else None,
-            "libelle_ajouter": self.libelle_ajouter,
+            "libelle_ajouter": self.libelle_ajouter, "filtres": self.filtres(),
             "colonne_actions": bool(self.url_modifier or self.url_supprimer),
         })
         return ctx
@@ -127,12 +132,18 @@ class Supprimer(AccesDuerp, DeleteView):
         collecteur = NestedObjects(using=DEFAULT_DB_ALIAS)
         collecteur.collect([self.object])
         ctx["bloquants"] = self._decrire(collecteur.protected)
-        ctx["dependances"] = [(self._nom(m, len(o)), len(o)) for m, o in collecteur.model_objs.items() if m is not self.model]
+        # (les tables de liaison plusieurs-à-plusieurs, créées automatiquement, ne sont pas des dépendances à montrer)
+        ctx["dependances"] = [(self._nom(m, len(o)), len(o)) for m, o in collecteur.model_objs.items()
+                              if m is not self.model and not m._meta.auto_created] + self.dependances_supplementaires()
         ctx.update({"titre": self.titre, "url_liste": self.url_retour()})
         return ctx
 
     def url_retour(self):
         return reverse(self.url_liste)
+
+    def dependances_supplementaires(self):
+        """Éléments supprimés en plus de la cascade des clés étrangères : liste de (libellé, nombre)."""
+        return []
 
     @staticmethod
     def _nom(modele, nombre):

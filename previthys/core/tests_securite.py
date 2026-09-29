@@ -95,7 +95,7 @@ class XssTests(BaseSecurite):
     def test_message_apres_action_terminee_echappe_le_nom_du_risque(self):
         r = Risque.objects.create(unite=self.unite_a, categorie=self.categorie, danger=XSS, frequence=1, gravite=1, maitrise=1)
         self.client.force_login(self.root)
-        rep = self.client.post(reverse("actions_ajouter"), {"risque": r.pk, "description": "ok", "statut": "terminee"}, follow=True)
+        rep = self.client.post(reverse("actions_ajouter"), {"portee": "risques", "risques": r.pk, "description": "ok", "statut": "terminee"}, follow=True)
         self.assertNotIn(XSS, rep.content.decode())
         self.assertContains(rep, "Réévaluer le risque")
 
@@ -152,7 +152,7 @@ class ControleAccesTests(BaseSecurite):
         rep = self.client.post(reverse("risques_ajouter"), {"unite": self.unite_b.pk, "categorie": self.categorie.pk, "danger": "Intrusion", "frequence": 1, "gravite": 1, "maitrise": 1})
         self.assertEqual(rep.status_code, 200)   # formulaire réaffiché avec erreur
         self.assertFalse(Risque.objects.filter(danger="Intrusion").exists())
-        rep = self.client.post(reverse("actions_ajouter"), {"risque": self.risque_b.pk, "description": "Intrusion", "statut": "a_faire"})
+        rep = self.client.post(reverse("actions_ajouter"), {"portee": "risques", "risques": self.risque_b.pk, "description": "Intrusion", "statut": "a_faire"})
         self.assertFalse(ActionPrevention.objects.filter(description="Intrusion").exists())
 
     def test_archivage_limite_aux_structures_de_l_utilisateur(self):

@@ -6,7 +6,7 @@
 from django.db.models import Q
 from django.urls import reverse
 
-from core.models import UniteTravail
+from core.models import ActionPrevention, UniteTravail
 from core.utils.fichiers import est_image
 from core.utils.structures import filtre_structure
 
@@ -16,7 +16,8 @@ def construire_donnees(user, structure=None):
     unites = UniteTravail.objects.filter(filtre_structure(user))
     if structure:
         unites = unites.filter(Q(structure=structure) | Q(structure__isnull=True))
-    unites = unites.prefetch_related("risques__categorie", "risques__actions", "risques__actions__responsable", "risques__pieces_jointes")
+    unites = unites.prefetch_related("risques__categorie", "risques__actions", "risques__actions__responsable", "risques__actions__risques", "risques__actions__categorie",
+                                     "risques__pieces_jointes")
     donnees = []
     for unite in unites:
         risques = []
@@ -27,17 +28,30 @@ def construire_donnees(user, structure=None):
                 "mesures_existantes": r.mesures_existantes,
                 "images": [{"url": reverse("pieces_jointes_telecharger", args=[p.pk]), "nom": p.nom_original}
                            for p in r.pieces_jointes.all() if est_image(p.nom_original)],
-                "actions": [{
-                    "description": a.description, "statut": a.get_statut_display(),
-                    "responsable": (a.responsable.get_full_name() or a.responsable.get_username()) if a.responsable else "",
-                    "echeance": a.echeance.strftime("%d/%m/%Y") if a.echeance else "",
-                    "terminee": a.statut == "terminee",
-                    "date_realisation": a.date_realisation.strftime("%d/%m/%Y") if a.date_realisation else "",
-                } for a in r.actions.all()],
+                "actions": [_action(a) for a in r.actions.all()],
             })
         risques.sort(key=lambda x: -x["cotation"])
         donnees.append({"nom": unite.nom, "effectif": unite.effectif, "description": unite.description, "risques": risques})
     return donnees
+
+
+def _action(a):
+    return {
+        "description": a.description, "statut": a.get_statut_display(), "categorie": a.categorie.nom if a.categorie else "",
+        "responsable": (a.responsable.get_full_name() or a.responsable.get_username()) if a.responsable else "",
+        "echeance": a.echeance.strftime("%d/%m/%Y") if a.echeance else "",
+        "terminee": a.statut == "terminee",
+        "date_realisation": a.date_realisation.strftime("%d/%m/%Y") if a.date_realisation else "",
+        "commune": a.nbre_unites if a.est_commune else 0,   # nombre d'unités d'une action commune (0 sinon)
+    }
+
+
+def construire_mesures_generales(user, structure=None):
+    """Actions générales (sans risque) visibles, pour le document, l'export et l'archivage."""
+    actions = ActionPrevention.objects.filter(risques__isnull=True).filter(filtre_structure(user)).select_related("responsable", "categorie")
+    if structure:
+        actions = actions.filter(Q(structure=structure) | Q(structure__isnull=True))
+    return [_action(a) for a in actions]
 
 
 def normaliser_donnees(donnees):
@@ -58,7 +72,8 @@ def normaliser_donnees(donnees):
                 (realisees if terminee else prevues).append(a)
             risques.append({
                 **r,
-                "mesures_realisees": [{"description": a["description"], "date": a.get("date_realisation", "")} for a in realisees],
+                "mesures_realisees": [{"description": a["description"], "date": a.get("date_realisation", ""), "commune": a.get("commune", 0)}
+                                      for a in realisees],
                 "actions": prevues,
                 "actions_toutes": toutes,
             })

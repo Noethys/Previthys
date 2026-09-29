@@ -9,6 +9,8 @@ import uuid
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.signals import post_delete, pre_delete
+from django.dispatch import receiver
 from django.utils import timezone
 
 # Méthode de cotation Fréquence x Gravité x Maîtrise : chaque facteur est noté 1, 4, 7 ou 10, et la cotation
@@ -24,6 +26,23 @@ STATUTS_ACTIONS = [("a_faire", "À faire"), ("en_cours", "En cours"), ("terminee
 # Evaluation
 SEUIL_MOYEN = 70
 SEUIL_CRITIQUE = 343
+
+
+def _tranches():
+    """Valeurs de cotation réellement possibles (produit de trois notes 1, 4, 7 ou 10), par niveau."""
+    valeurs = sorted({f * g * m for f in (1, 4, 7, 10) for g in (1, 4, 7, 10) for m in (1, 4, 7, 10)})
+    return ([v for v in valeurs if v < SEUIL_MOYEN], [v for v in valeurs if SEUIL_MOYEN <= v < SEUIL_CRITIQUE],
+            [v for v in valeurs if v >= SEUIL_CRITIQUE])
+
+
+def _nombre(n):
+    return "{:,}".format(n).replace(",", "\u202f")
+
+
+# Texte d'explication de la cotation (liste des risques, tableau de bord, export Excel), déduit des seuils :
+# « Cotation = fréquence × gravité × maîtrise : faible (1 à 64), moyen (70 à 280), critique (343 à 1 000). »
+NOTE_COTATION = "Cotation = fréquence × gravité × maîtrise : faible (%s), moyen (%s), critique (%s)." % tuple(
+    "%s à %s" % (_nombre(t[0]), _nombre(t[-1])) for t in _tranches())
 
 
 def calcul_niveau(cotation):
@@ -139,15 +158,53 @@ class PieceJointe(models.Model):
         return self.nom_original
 
 
+class CategorieAction(models.Model):
+    """Type d'action de prévention (formation, matériel, organisation, travaux...), pour regrouper le plan d'actions."""
+    nom = models.CharField("Nom", max_length=100, unique=True, error_messages={"unique": "Cette catégorie existe déjà."})
+    description = models.TextField("Description", blank=True)
+    ordre = models.IntegerField("Ordre d'affichage", default=0)
+
+    class Meta:
+        verbose_name = "catégorie d'action"
+        verbose_name_plural = "catégories d'actions"
+        ordering = ["ordre", "nom"]
+
+    def __str__(self):
+        return self.nom
+
+
+class GestionnaireActions(models.Manager):
+    def create(self, risque=None, risques=None, **kwargs):
+        """Accepte encore `risque=` (une action liée à un seul risque), comme avant les actions multi-risques."""
+        action = super().create(**kwargs)
+        liste = list(risques or []) + ([risque] if risque is not None else [])
+        if liste:
+            action.risques.add(*liste)
+            action.maj_structure()
+        return action
+
+
 class ActionPrevention(models.Model):
-    risque = models.ForeignKey(Risque, verbose_name="Risque", related_name="actions", on_delete=models.CASCADE)
+    """Action de prévention. Selon ses risques, elle est :
+    - propre à un risque (un seul risque) ;
+    - commune (plusieurs risques, en général une même action pour plusieurs unités : une seule action, un seul
+      coût, un seul statut, affichée sur la fiche de chaque risque) ;
+    - générale (aucun risque) : mesure qui concerne toute la structure (sensibilisation, outil de signalement...).
+    """
+    risques = models.ManyToManyField(Risque, verbose_name="Risques concernés", related_name="actions", blank=True)
+    structure = models.ForeignKey(Structure, verbose_name="Structure", on_delete=models.PROTECT, blank=True, null=True,
+                                  help_text="Pour une action générale : structure concernée (vide = toutes). "
+                                            "Pour les autres actions, déduite des unités des risques.")
     description = models.TextField("Action de prévention")
+    categorie = models.ForeignKey(CategorieAction, verbose_name="Catégorie", related_name="actions", on_delete=models.PROTECT, blank=True, null=True)
     responsable = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Responsable", on_delete=models.SET_NULL, blank=True, null=True)
     echeance = models.DateField("Échéance", blank=True, null=True)
     duree = models.CharField("Durée", max_length=100, blank=True)
     cout = models.DecimalField("Coût", max_digits=12, decimal_places=2, blank=True, null=True, validators=[MinValueValidator(0)])
     statut = models.CharField("Statut", max_length=20, choices=STATUTS_ACTIONS, default="a_faire")
     date_realisation = models.DateField("Date de réalisation", blank=True, null=True)
+
+    objects = GestionnaireActions()
 
     class Meta:
         verbose_name = "action de prévention"
@@ -165,8 +222,68 @@ class ActionPrevention(models.Model):
     def en_retard(self):
         return bool(self.statut != "terminee" and self.echeance and self.echeance < timezone.localdate())
 
+    # Portée (utilise risques.all() : profite d'un prefetch_related("risques__unite") éventuel)
+    @property
+    def unites(self):
+        vues = {}
+        for r in self.risques.all():
+            vues.setdefault(r.unite_id, r.unite)
+        return sorted(vues.values(), key=lambda u: u.nom)
+
+    @property
+    def est_generale(self):
+        return self.pk is not None and not self.risques.all()
+
+    @property
+    def nbre_unites(self):
+        return len({r.unite_id for r in self.risques.all()})
+
+    @property
+    def est_commune(self):
+        return self.nbre_unites > 1
+
+    @property
+    def resume_unites(self):
+        """Texte court de la portée : « Action générale », nom de l'unité ou « Commune à N unités »."""
+        if self.est_generale:
+            return "Action générale"
+        n = self.nbre_unites
+        return self.unites[0].nom if n == 1 else "Commune à %d unités" % n
+
+    def maj_structure(self):
+        """Pour une action liée à des risques, la structure est celle de leurs unités si elle est unique (sinon vide).
+        Elle sert au journal ; la visibilité d'une telle action dépend de ses risques (voir filtre_actions)."""
+        if not self.risques.exists():
+            return
+        structures = set(self.risques.values_list("unite__structure", flat=True).distinct())
+        structure = structures.pop() if len(structures) == 1 else None
+        if self.structure_id != structure:
+            self.structure_id = structure
+            self.save(update_fields=["structure"])
+
     def __str__(self):
         return self.description[:60]
+
+
+def actions_propres(risques):
+    """Actions qui n'ont pas d'autre risque que ceux indiqués : elles disparaissent avec eux."""
+    ids = [r.pk for r in risques]
+    return ActionPrevention.objects.filter(risques__in=ids).exclude(risques__in=Risque.objects.exclude(pk__in=ids)).distinct()
+
+
+@receiver(pre_delete, sender=Risque)
+def noter_actions_du_risque(sender, instance, **kwargs):
+    instance._actions_liees = list(instance.actions.values_list("pk", flat=True))
+
+
+@receiver(post_delete, sender=Risque)
+def supprimer_actions_orphelines(sender, instance, **kwargs):
+    """Une action qui n'a plus aucun risque après la suppression d'un risque (ou de son unité) est supprimée, comme
+    avant : elle ne doit pas devenir une action générale. Une action commune perd seulement ce risque.
+    (post_delete : quand une unité est supprimée, tous ses risques et leurs liens sont déjà effacés à ce moment.)"""
+    ids = getattr(instance, "_actions_liees", None)
+    if ids:
+        ActionPrevention.objects.filter(pk__in=ids, risques__isnull=True).delete()
 
 
 class JournalAudit(models.Model):
@@ -205,6 +322,7 @@ class VersionDuerp(models.Model):
     auteur = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Auteur", on_delete=models.SET_NULL, blank=True, null=True)
     commentaire = models.TextField("Motif de la mise à jour")
     donnees = models.JSONField("Données archivées", default=list)
+    mesures_generales = models.JSONField("Mesures générales archivées", default=list, blank=True)
 
     class Meta:
         verbose_name = "version du DUERP"

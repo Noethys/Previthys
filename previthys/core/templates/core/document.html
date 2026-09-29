@@ -8,6 +8,18 @@
     <a class="btn btn-success" href="{% if version %}{% url 'versions_export' version.pk %}{% else %}{% url 'export_xlsx' %}{% endif %}">Exporter en Excel</a>
     {% if version %}<a class="btn btn-outline-secondary" href="{% url 'versions_liste' %}">Retour aux versions</a>{% endif %}
   </p>
+  {% if mesures_generales %}
+    <h2 class="h5 mt-4">Mesures générales de prévention <small class="text-body-secondary">(ensemble des unités de travail)</small></h2>
+    <table class="table table-bordered table-sm">
+      <thead><tr><th style="width:50%">Action</th><th>Catégorie</th><th>Responsable</th><th>Échéance</th><th>Statut</th></tr></thead>
+      <tbody>
+        {% for a in mesures_generales %}
+          <tr><td>{{ a.description|linebreaksbr }}</td><td>{{ a.categorie }}</td><td>{{ a.responsable }}</td><td class="text-nowrap">{{ a.echeance }}</td>
+              <td class="text-nowrap">{{ a.statut }}{% if a.date_realisation %} <small class="text-body-secondary">le {{ a.date_realisation }}</small>{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
   {% for unite in donnees %}
     <h2 class="h5 mt-4">{{ unite.nom }} <small class="text-body-secondary">({{ unite.effectif }} agent{{ unite.effectif|pluralize }})</small></h2>
     {% if unite.description %}<p>{{ unite.description }}</p>{% endif %}
@@ -21,8 +33,8 @@
             </td>
             <td>{{ r.categorie }}</td>
             <td class="text-center text-nowrap niveau-{{ r.niveau }}">{{ r.frequence }} × {{ r.gravite }} × {{ r.maitrise }} = {{ r.cotation }}</td>
-            <td>{{ r.mesures_existantes|linebreaksbr }}{% for m in r.mesures_realisees %}{% if forloop.first and r.mesures_existantes %}<br>{% endif %}{% if not forloop.first %}<br>{% endif %}• {{ m.description }} <small class="text-body-secondary">({% if m.date %}réalisée le {{ m.date }}{% else %}réalisée{% endif %})</small>{% endfor %}</td>
-            <td>{% for a in r.actions %}{{ a.description }} <small>({{ a.statut }}{% if a.echeance %}, {{ a.echeance }}{% endif %})</small>{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
+            <td>{{ r.mesures_existantes|linebreaksbr }}{% for m in r.mesures_realisees %}{% if forloop.first and r.mesures_existantes %}<br>{% endif %}{% if not forloop.first %}<br>{% endif %}• {{ m.description }} <small class="text-body-secondary">({% if m.date %}réalisée le {{ m.date }}{% else %}réalisée{% endif %}{% if m.commune %} — action commune{% endif %})</small>{% endfor %}</td>
+            <td>{% for a in r.actions %}{{ a.description }} <small>({% if a.categorie %}{{ a.categorie }}, {% endif %}{{ a.statut }}{% if a.echeance %}, {{ a.echeance }}{% endif %}{% if a.commune %} — action commune{% endif %})</small>{% if not forloop.last %}<br>{% endif %}{% endfor %}</td>
           </tr>
         {% empty %}
           <tr><td colspan="5" class="text-body-secondary">Aucun risque saisi.</td></tr>

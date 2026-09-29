@@ -4,72 +4,188 @@
 #  Distribué sous licence GNU GPL.
 
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.db.models import Count
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.http import urlencode
 from django.utils.functional import cached_property
-from django.utils.html import format_html
+from django.template.defaultfilters import linebreaksbr
+from django.utils.html import format_html, format_html_join
+from django.views.generic import View
 
 from core.forms.actions import FormulaireAction, FormulaireActionRisque
-from core.models import ActionPrevention, Risque
-from core.utils import filtre_structure
+from core.models import ActionPrevention, CategorieAction, Risque, UniteTravail
+from core.utils import filtre_actions, filtre_structure
+from core.utils.journal import consigner
 from core.views import crud
+
+BADGE_GENERALE = '<span class="badge portee-generale">Action générale</span>'
+BADGE_COMMUNE = '<span class="badge portee-commune">Commune à {} unités</span>'
+
+
+def actions_visibles(user):
+    return ActionPrevention.objects.filter(filtre_actions(user))
+
+
+def badge_statut(action):
+    if action.en_retard:
+        return format_html('<span class="badge text-bg-danger">En retard</span>')
+    couleur = {"a_faire": "secondary", "en_cours": "primary", "terminee": "success"}.get(action.statut, "secondary")
+    return format_html('<span class="badge text-bg-{}">{}</span>', couleur, action.get_statut_display())
 
 
 class Liste(crud.Liste):
     model = ActionPrevention
     titre = "Plan d'actions"
-    description = "Suivez les actions de prévention associées aux risques identifiés."
-    colonnes = ["ID", "Unité", "Danger", "Action", "Responsable", "Échéance", "Durée", "Coût", "Statut"]
-    ordre = "5,asc"
+    description = "Suivez les actions de prévention : générales (toute la structure), communes à plusieurs unités ou propres à un risque."
+    colonnes = ["ID", "Unité(s)", "Danger", "Action", "Catégorie", "Responsable", "Échéance", "Durée", "Coût", "Statut"]
+    ordre = "6,asc"
     url_ajouter, url_modifier, url_supprimer = "actions_ajouter", "actions_modifier", "actions_supprimer"
+    PORTEES = [("", "Toutes"), ("generales", "Générales"), ("communes", "Communes"), ("unite", "Propres à une unité")]
+
+    def base(self):
+        return (actions_visibles(self.request.user).annotate(nb_unites=Count("risques__unite", distinct=True))
+                .select_related("responsable", "structure", "categorie").prefetch_related("risques__unite", "risques__categorie"))
+
+    # Deux filtres combinables, dans l'adresse : ?portee=...&categorie=<id>|aucune
+    def portee(self):
+        return self.request.GET.get("portee", "") if self.request.GET.get("portee") in dict(self.PORTEES) else ""
+
+    def categorie(self):
+        valeur = self.request.GET.get("categorie", "")
+        return valeur if valeur == "aucune" or valeur.isdigit() else ""
+
+    @staticmethod
+    def filtrer_portee(qs, portee):
+        return {"generales": qs.filter(nb_unites=0), "communes": qs.filter(nb_unites__gt=1), "unite": qs.filter(nb_unites=1)}.get(portee, qs)
+
+    @staticmethod
+    def filtrer_categorie(qs, categorie):
+        if categorie == "aucune":
+            return qs.filter(categorie__isnull=True)
+        return qs.filter(categorie_id=int(categorie)) if categorie else qs
 
     def get_queryset(self):
-        return ActionPrevention.objects.select_related("risque__unite", "responsable").filter(filtre_structure(self.request.user, "risque__unite__"))
+        return self.filtrer_categorie(self.filtrer_portee(self.base(), self.portee()), self.categorie())
+
+    def url(self, portee, categorie):
+        parametres = urlencode([(k, v) for k, v in (("portee", portee), ("categorie", categorie)) if v])
+        return reverse("actions_liste") + ("?" + parametres if parametres else "")
+
+    def filtres(self):
+        portee, categorie = self.portee(), self.categorie()
+        # Chaque rangée compte les actions en tenant compte du filtre choisi dans l'autre rangée
+        comptes = {"": 0, "generales": 0, "communes": 0, "unite": 0}
+        for n in self.filtrer_categorie(self.base(), categorie).values_list("nb_unites", flat=True):
+            comptes[""] += 1
+            comptes["generales" if n == 0 else "communes" if n > 1 else "unite"] += 1
+        par_categorie = {}
+        for c in self.filtrer_portee(self.base(), portee).values_list("categorie", flat=True):
+            par_categorie[c] = par_categorie.get(c, 0) + 1
+        boutons_categories = [{"libelle": "Toutes", "nombre": sum(par_categorie.values()), "actif": categorie == "", "url": self.url(portee, "")}]
+        boutons_categories += [{"libelle": c.nom, "nombre": par_categorie.get(c.pk, 0), "actif": categorie == str(c.pk), "url": self.url(portee, c.pk)}
+                               for c in CategorieAction.objects.all()]
+        if par_categorie.get(None):
+            boutons_categories.append({"libelle": "Non classées", "nombre": par_categorie[None], "actif": categorie == "aucune", "url": self.url(portee, "aucune")})
+        return [
+            {"titre": "Portée", "boutons": [{"libelle": lib, "nombre": comptes[cle], "actif": cle == portee, "url": self.url(cle, categorie)}
+                                            for cle, lib in self.PORTEES]},
+            {"titre": "Catégorie", "boutons": boutons_categories},
+        ]
+
+    @cached_property
+    def risques_visibles(self):
+        return set(Risque.objects.filter(filtre_structure(self.request.user, "unite__")).values_list("pk", flat=True))
+
+    @cached_property
+    def nbre_unites_visibles(self):
+        return UniteTravail.objects.filter(filtre_structure(self.request.user)).count()
 
     def cellules(self, o):
-        statut = format_html('<span class="badge text-bg-danger">En retard</span>') if o.en_retard else o.get_statut_display()
+        risques = [r for r in o.risques.all() if r.pk in self.risques_visibles]   # jamais d'unité d'une autre structure
+        if o.nb_unites == 0:
+            portee = format_html(BADGE_GENERALE + "{}", format_html('<br><small class="text-body-secondary">{}</small>', o.structure) if o.structure else "")
+            danger = format_html('<span class="text-body-secondary">Tous les risques</span>')
+            tri_portee = "0"
+        else:
+            noms = sorted({r.unite.nom for r in risques})
+            if o.nb_unites > 1:
+                if len(noms) == o.nb_unites == self.nbre_unites_visibles:
+                    detail = "Toutes les unités"
+                else:
+                    detail = ", ".join(noms[:4]) + (" et %d autres" % (len(noms) - 4) if len(noms) > 4 else "")
+                portee = format_html(BADGE_COMMUNE + '<br><small class="text-body-secondary">{}</small>', o.nb_unites, detail)
+                tri_portee = "1"
+            else:
+                portee = noms[0] if noms else ""
+                tri_portee = "2" + (noms[0] if noms else "")
+            dangers = sorted({r.danger for r in risques})
+            categories = sorted({r.categorie.nom for r in risques})
+            if len(dangers) == 1:
+                danger = dangers[0]
+            elif len(categories) == 1:
+                danger = format_html('{}<br><small class="text-body-secondary">{} risques</small>', categories[0], len(risques))
+            else:
+                danger = "%d risques" % len(risques)
         responsable = (o.responsable.get_full_name() or o.responsable.get_username()) if o.responsable else ""
-        return [o.pk, o.risque.unite.nom, o.risque.danger, o.description, responsable,
+        return [o.pk, (portee, tri_portee), danger, linebreaksbr(o.description),
+                (o.categorie.nom if o.categorie else "", "%05d" % o.categorie.ordre if o.categorie else "99999"), responsable,
                 (o.echeance.strftime("%d/%m/%Y") if o.echeance else "", o.echeance.isoformat() if o.echeance else "9999-12-31"),
-                o.duree, (o.cout_affiche, o.cout if o.cout is not None else -1), statut]
+                o.duree, (o.cout_affiche, o.cout if o.cout is not None else -1), (badge_statut(o), o.statut)]
 
 
 class InviterAReevaluer:
-    """Quand une action passe à « Terminée », elle devient une mesure existante : on invite à réévaluer le risque."""
+    """Quand une action passe à « Terminée », elle devient une mesure existante : on invite à réévaluer le(s) risque(s)."""
 
     def form_valid(self, form):
         response = super().form_valid(form)
         if form.cleaned_data["statut"] == "terminee" and ("statut" in form.changed_data):
-            risque = form.instance.risque
-            if self.request.user.has_perm("core.change_risque"):
+            risques = list(self.object.risques.all())
+            if not risques:
+                messages.info(self.request, "Action générale terminée : elle figure dans les mesures générales du document unique.")
+            elif len(risques) > 1:
+                messages.info(self.request, "Action terminée : elle figure désormais dans les mesures existantes des %d risques concernés. "
+                                            "Pensez à les réévaluer si leur gravité ou leur fréquence ont diminué." % len(risques))
+            elif self.request.user.has_perm("core.change_risque"):
                 messages.info(self.request, format_html(
                     "Action terminée : elle figure désormais dans les mesures existantes du risque « {} ». "
                     '<a href="{}" class="alert-link">Réévaluer le risque</a> si sa gravité ou sa fréquence ont diminué.',
-                    risque.danger, reverse("risques_modifier", args=[risque.pk])))
+                    risques[0].danger, reverse("risques_modifier", args=[risques[0].pk])))
             else:
-                messages.info(self.request, "Action terminée : elle figure désormais dans les mesures existantes du risque « %s »." % risque.danger)
+                messages.info(self.request, "Action terminée : elle figure désormais dans les mesures existantes du risque « %s »." % risques[0].danger)
         return response
 
 
-class Ajouter(InviterAReevaluer, crud.Ajouter):
-    model, form_class = ActionPrevention, FormulaireAction
-    titre, url_liste, url_ajouter = "Ajouter une action de prévention", "actions_liste", "actions_ajouter"
-    description = "Renseignez l'action, son responsable et son échéance."
-
-
-class Modifier(InviterAReevaluer, crud.Modifier):
-    model, form_class = ActionPrevention, FormulaireAction
-    titre, url_liste = "Modifier une action de prévention", "actions_liste"
+class Saisie:
+    template_name = "core/action_form.html"
 
     def get_queryset(self):
-        return ActionPrevention.objects.filter(filtre_structure(self.request.user, "risque__unite__"))
+        return actions_visibles(self.request.user)
+
+
+class Ajouter(InviterAReevaluer, Saisie, crud.Ajouter):
+    model, form_class = ActionPrevention, FormulaireAction
+    titre, url_liste, url_ajouter = "Ajouter une action de prévention", "actions_liste", "actions_ajouter"
+    description = "Une action peut être générale (toute la structure), propre à un risque ou commune à plusieurs unités."
+
+
+class Modifier(InviterAReevaluer, Saisie, crud.Modifier):
+    model, form_class = ActionPrevention, FormulaireAction
+    titre, url_liste = "Modifier une action de prévention", "actions_liste"
 
 
 class Supprimer(crud.Supprimer):
     model, titre, url_liste = ActionPrevention, "Supprimer une action de prévention", "actions_liste"
 
     def get_queryset(self):
-        return ActionPrevention.objects.filter(filtre_structure(self.request.user, "risque__unite__"))
+        return actions_visibles(self.request.user)
+
+    def dependances_supplementaires(self):
+        n = self.object.nbre_unites
+        return [("unités concernées : l'action commune disparaît pour chacune d'elles", n)] if n > 1 else []
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -86,7 +202,7 @@ class DuRisque:
         return get_object_or_404(risques, pk=self.kwargs["risque"])
 
     def get_queryset(self):
-        return ActionPrevention.objects.filter(risque=self.risque)
+        return ActionPrevention.objects.filter(risques=self.risque)
 
     def url_retour(self):
         return reverse("risques_modifier", args=[self.risque.pk]) + "#actions"
@@ -101,12 +217,14 @@ class DuRisque:
         return ctx
 
 
-class RisqueAjouter(DuRisque, Ajouter):
-    form_class = FormulaireActionRisque
+class RisqueAjouter(DuRisque, InviterAReevaluer, crud.Ajouter):
+    model, form_class = ActionPrevention, FormulaireActionRisque
+    titre, url_ajouter = "Ajouter une action de prévention", None
 
-    def form_valid(self, form):
-        form.instance.risque = self.risque
-        return super().form_valid(form)
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["risque_impose"] = self.risque
+        return kwargs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -114,9 +232,50 @@ class RisqueAjouter(DuRisque, Ajouter):
         return ctx
 
 
-class RisqueModifier(DuRisque, Modifier):
-    form_class = FormulaireActionRisque
+class RisqueModifier(DuRisque, InviterAReevaluer, crud.Modifier):
+    model, form_class = ActionPrevention, FormulaireActionRisque
+    titre = "Modifier une action de prévention"
 
 
-class RisqueSupprimer(DuRisque, Supprimer):
-    pass
+class AccesAction(LoginRequiredMixin, DuRisque, View):
+    """Retrait ou rattachement d'une action depuis la fiche d'un risque (POST uniquement)."""
+    http_method_names = ["post"]
+
+    def journal(self, action, texte):
+        consigner(self.request, "modification", action, "%s : %s — %s" % (texte, self.risque.unite.nom, self.risque.danger))
+
+
+class RisqueRetirer(AccesAction):
+    """Action propre au risque : elle est supprimée. Action commune : seul ce risque lui est retiré (« Détacher »)."""
+
+    def post(self, request, risque, pk):
+        action = get_object_or_404(ActionPrevention.objects.filter(risques=self.risque), pk=pk)
+        if action.risques.count() > 1:
+            if not request.user.has_perm("core.change_actionprevention"):
+                raise PermissionDenied
+            action.risques.remove(self.risque)
+            action.maj_structure()
+            self.journal(action, "Risque retiré")
+            messages.success(request, "Action détachée de ce risque : elle reste en place pour les autres unités.")
+        else:
+            if not request.user.has_perm("core.delete_actionprevention"):
+                raise PermissionDenied
+            action.delete()
+            consigner(request, "suppression", action)
+            messages.success(request, "Suppression effectuée")
+        return HttpResponseRedirect(self.url_retour())
+
+
+class RisqueRattacher(AccesAction):
+    """Ajoute ce risque à une action existante (typiquement une action commune à plusieurs unités)."""
+
+    def post(self, request, risque):
+        if not request.user.has_perm("core.change_actionprevention"):
+            raise PermissionDenied
+        candidates = actions_visibles(request.user).filter(risques__isnull=False).exclude(risques=self.risque).distinct()
+        action = get_object_or_404(candidates, pk=request.POST.get("action") or 0)
+        action.risques.add(self.risque)
+        action.maj_structure()
+        self.journal(action, "Risque ajouté")
+        messages.success(request, "Action rattachée à ce risque.")
+        return HttpResponseRedirect(self.url_retour())

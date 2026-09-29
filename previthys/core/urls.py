@@ -5,7 +5,7 @@
 
 from django.urls import path
 
-from core.views import actions, auth, categories, dashboard, document, export, journal, mise_a_jour, pieces_jointes, risques, unites, versions
+from core.views import actions, auth, categories, categories_actions, dashboard, document, export, journal, mise_a_jour, pieces_jointes, risques, unites, versions
 
 urlpatterns = [
     path("connexion/", auth.Connexion.as_view(), name="login"),
@@ -33,7 +33,8 @@ urlpatterns = [
     path("risques/<int:pk>/supprimer/", risques.Supprimer.as_view(), name="risques_supprimer"),
     path("risques/<int:risque>/actions/ajouter/", actions.RisqueAjouter.as_view(), name="risques_actions_ajouter"),
     path("risques/<int:risque>/actions/<int:pk>/modifier/", actions.RisqueModifier.as_view(), name="risques_actions_modifier"),
-    path("risques/<int:risque>/actions/<int:pk>/supprimer/", actions.RisqueSupprimer.as_view(), name="risques_actions_supprimer"),
+    path("risques/<int:risque>/actions/<int:pk>/supprimer/", actions.RisqueRetirer.as_view(), name="risques_actions_supprimer"),
+    path("risques/<int:risque>/actions/rattacher/", actions.RisqueRattacher.as_view(), name="risques_actions_rattacher"),
     path("risques/pieces-jointes/<int:pk>/telecharger/", pieces_jointes.Telecharger.as_view(), name="pieces_jointes_telecharger"),
     path("risques/pieces-jointes/<int:pk>/supprimer/", pieces_jointes.Supprimer.as_view(), name="pieces_jointes_supprimer"),
 
@@ -41,6 +42,11 @@ urlpatterns = [
     path("actions/ajouter/", actions.Ajouter.as_view(), name="actions_ajouter"),
     path("actions/<int:pk>/modifier/", actions.Modifier.as_view(), name="actions_modifier"),
     path("actions/<int:pk>/supprimer/", actions.Supprimer.as_view(), name="actions_supprimer"),
+
+    path("categories-actions/", categories_actions.Liste.as_view(), name="categories_actions_liste"),
+    path("categories-actions/ajouter/", categories_actions.Ajouter.as_view(), name="categories_actions_ajouter"),
+    path("categories-actions/<int:pk>/modifier/", categories_actions.Modifier.as_view(), name="categories_actions_modifier"),
+    path("categories-actions/<int:pk>/supprimer/", categories_actions.Supprimer.as_view(), name="categories_actions_supprimer"),
 
     path("versions/", versions.Liste.as_view(), name="versions_liste"),
     path("versions/ajouter/", versions.Ajouter.as_view(), name="versions_ajouter"),

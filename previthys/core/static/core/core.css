@@ -46,3 +46,16 @@ table.table-document th:nth-child(5), table.table-document td:nth-child(5) { wid
 /* Liste des risques : actions de prévention associées, une par ligne. */
 .liste-actions li { font-size: .875rem; white-space: normal; }
 .liste-actions li + li { margin-top: 2px; }
+
+/* Portée des actions de prévention : générale (toute la structure) ou commune à plusieurs unités. */
+.portee-generale { background: #e7f1ff; color: #0a58ca; border: 1px solid #b6d4fe; }
+.portee-commune { background: #f3e8ff; color: #6f42c1; border: 1px solid #d9c2fb; }
+.encart-commune { border-left: 4px solid #6f42c1; background: #faf7ff; }
+/* Choix des risques d'une action : cases à cocher regroupées par unité */
+.liste-risques { max-height: 360px; overflow: auto; border: 1px solid var(--bs-border-color); border-radius: .375rem; background: #fff; }
+.liste-risques .unite { background: #f8f9fa; font-weight: 600; padding: .35rem .75rem; border-top: 1px solid var(--bs-border-color); position: sticky; top: 0; z-index: 1; }
+.liste-risques .groupe:first-child .unite { border-top: 0; }
+.liste-risques label { display: flex; gap: .5rem; align-items: center; padding: .2rem .75rem .2rem 1.75rem; margin: 0; cursor: pointer; }
+.liste-risques label:hover { background: #f8f9fa; }
+details.unites-action summary { display: inline; cursor: pointer; font-size: .875rem; color: var(--bs-link-color); }
+.categorie-action { background: #f1f3f5; color: #495057; border: 1px solid #ced4da; font-weight: 500; }

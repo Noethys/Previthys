@@ -10,13 +10,13 @@ from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.formatting.rule import CellIsRule
 
-from core.models import SEUIL_CRITIQUE, SEUIL_MOYEN
+from core.models import NOTE_COTATION, SEUIL_CRITIQUE, SEUIL_MOYEN
 from core.utils.donnees import normaliser_donnees
 
 POLICE = "Arial"
 BORD = Border(*(Side(style="thin", color="BFBFBF"),) * 4)
 NIVEAUX = {"Faible": ("C6EFCE", "006100"), "Moyen": ("FFEB9C", "9C5700"), "Critique": ("FFC7CE", "9C0006")}
-NOTE_COTATION = "Cotation = fréquence × gravité × maîtrise (1 à 1 000). Faible jusqu'à 40, moyen de 41 à 196, critique à partir de 280."
+
 
 
 class Formule(str):
@@ -79,7 +79,11 @@ def _mise_en_forme_niveau(ws, plage):
         ws.conditional_formatting.add(plage, CellIsRule(operator="equal", formula=['"%s"' % libelle], fill=PatternFill("solid", start_color=fond, end_color=fond), font=Font(name=POLICE, size=10, color=texte, bold=True)))
 
 
-def generer_xlsx(donnees, sous_titre=""):
+def _portee(a):
+    return "Commune à %d unités" % a["commune"] if a.get("commune") else "Propre au risque"
+
+
+def generer_xlsx(donnees, sous_titre="", mesures_generales=()):
     """Construit le classeur Excel du DUERP à partir de la structure construire_donnees()."""
     risques, actions = [], []
     for unite in normaliser_donnees(donnees):
@@ -87,6 +91,8 @@ def generer_xlsx(donnees, sous_titre=""):
             risques.append((unite["nom"], r))
             for a in r["actions_toutes"]:
                 actions.append((unite["nom"], r["danger"], a))
+    # Mesures générales (sans risque) : en tête de la feuille Actions ; une action commune y figure une fois par risque
+    actions = [("Toutes les unités", "Mesure générale", {**a, "_portee": "Mesure générale"}) for a in mesures_generales] + actions
     n_r = max(len(risques) + 1, 2)
     n_a = max(len(actions) + 1, 2)
 
@@ -117,7 +123,7 @@ def generer_xlsx(donnees, sous_titre=""):
     _mise_en_forme_niveau(ws_r, "I2:I%d" % n_r)
 
     # ----- Feuille Actions -----
-    _entete(ws_a, 1, ["Unité de travail", "Danger", "Action de prévention", "Responsable", "Échéance", "Statut", "En retard", "Date de réalisation"])
+    _entete(ws_a, 1, ["Unité de travail", "Danger", "Action de prévention", "Responsable", "Échéance", "Statut", "En retard", "Date de réalisation", "Portée", "Catégorie"])
     for i, (unite, danger, a) in enumerate(actions, 2):
         _cellule(ws_a, i, 1, unite)
         _cellule(ws_a, i, 2, danger)
@@ -127,10 +133,12 @@ def generer_xlsx(donnees, sous_titre=""):
         _cellule(ws_a, i, 6, a["statut"], centre=True)
         _cellule(ws_a, i, 7, Formule('=IF(AND(F%d<>"Terminée",E%d<>"",E%d<TODAY()),"Oui","Non")' % (i, i, i)), centre=True)
         _cellule(ws_a, i, 8, _date(a.get("date_realisation", "")), centre=True, fmt="DD/MM/YYYY")
-    for col, largeur in zip("ABCDEFGH", (26, 36, 46, 22, 14, 14, 12, 16)):
+        _cellule(ws_a, i, 9, a.get("_portee") or _portee(a))
+        _cellule(ws_a, i, 10, a.get("categorie", ""))   # absente des archives créées avant les catégories d'actions
+    for col, largeur in zip("ABCDEFGHIJ", (26, 36, 46, 22, 14, 14, 12, 16, 22, 18)):
         ws_a.column_dimensions[col].width = largeur
     ws_a.freeze_panes = "A2"
-    ws_a.auto_filter.ref = "A1:H%d" % n_a
+    ws_a.auto_filter.ref = "A1:J%d" % n_a
     ws_a.conditional_formatting.add("G2:G%d" % n_a, CellIsRule(operator="equal", formula=['"Oui"'], fill=PatternFill("solid", start_color="FFC7CE", end_color="FFC7CE"), font=Font(name=POLICE, size=10, color="9C0006", bold=True)))
 
     # ----- Feuille Synthèse -----

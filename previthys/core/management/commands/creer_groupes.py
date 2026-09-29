@@ -6,7 +6,7 @@
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
-MODELES = ["structure", "unitetravail", "categorierisque", "risque", "actionprevention", "versionduerp", "journalaudit"]
+MODELES = ["structure", "unitetravail", "categorierisque", "risque", "actionprevention", "categorieaction", "versionduerp", "journalaudit"]
 
 GROUPES = {
     "Previthys - lecture": ["view"],

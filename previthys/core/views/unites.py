@@ -45,3 +45,7 @@ class Supprimer(crud.Supprimer):
 
     def get_queryset(self):
         return UniteTravail.objects.filter(filtre_structure(self.request.user))
+
+    def dependances_supplementaires(self):
+        from core.views.risques import dependances_actions
+        return dependances_actions(list(self.object.risques.all()))

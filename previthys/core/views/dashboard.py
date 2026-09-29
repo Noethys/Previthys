@@ -6,8 +6,8 @@
 from django.utils import timezone
 from django.views.generic import TemplateView
 
-from core.models import ActionPrevention, Risque, UniteTravail, VersionDuerp
-from core.utils import filtre_structure, repartition_par_categorie, repartition_par_niveau
+from core.models import NOTE_COTATION, ActionPrevention, Risque, UniteTravail, VersionDuerp
+from core.utils import filtre_actions, filtre_structure, repartition_par_categorie, repartition_par_niveau
 from core.utils.update import Get_update_for_accueil
 from core.views.crud import Lecture
 
@@ -19,7 +19,7 @@ class Dashboard(Lecture, TemplateView):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
         risques = list(Risque.objects.select_related("unite", "categorie").filter(filtre_structure(user, "unite__")))
-        actions = ActionPrevention.objects.select_related("risque__unite").filter(filtre_structure(user, "risque__unite__")).exclude(statut="terminee")
+        actions = ActionPrevention.objects.filter(filtre_actions(user)).prefetch_related("risques__unite").exclude(statut="terminee")
         derniere = VersionDuerp.objects.filter(filtre_structure(user)).first()
         ctx.update({
             "nbre_unites": UniteTravail.objects.filter(filtre_structure(user)).count(),
@@ -33,5 +33,6 @@ class Dashboard(Lecture, TemplateView):
             "nouvelle_version": Get_update_for_accueil(user) if user.is_superuser else False,
             "top_risques": sorted(risques, key=lambda r: -r.cotation)[:5],
             "repartition_categories": repartition_par_categorie(risques),
+            "note_cotation": NOTE_COTATION,
         })
         return ctx

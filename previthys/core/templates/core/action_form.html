@@ -1,0 +1,91 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% comment %}Formulaire d'une action du plan d'actions : portée (générale ou liée à des risques) et choix des risques par unité.{% endcomment %}
+{% block titre_page %}{{ titre }}{% endblock %}
+{% block contenu %}
+  <h1 class="h4">{{ titre }}</h1>
+  {% if description %}<p class="text-body-secondary">{{ description }}</p>{% endif %}
+  <div class="card card-body">
+    <form method="post" novalidate id="formulaire-action">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+      {% include "core/_champ_ligne.html" with field=form.description %}
+      {% include "core/_champ_ligne.html" with field=form.categorie %}
+
+      <div class="row mb-3">
+        <div class="col-md-3 col-form-label">{{ form.portee.label }}</div>
+        <div class="col-md-7">
+          {% for choix in form.portee %}
+            <div class="form-check">
+              {{ choix.tag }}
+              <label class="form-check-label" for="{{ choix.id_for_label }}">
+                {% if choix.data.value == "generale" %}<b>Action générale</b> <span class="text-body-secondary">— concerne toute la structure, sans risque particulier (ex. : sensibilisation, outil de signalement)</span>
+                {% else %}<b>Liée à un ou plusieurs risques</b> <span class="text-body-secondary">— une seule action, affichée sur la fiche de chaque risque</span>{% endif %}
+              </label>
+            </div>
+          {% endfor %}
+          {% for erreur in form.portee.errors %}<div class="text-danger small">{{ erreur }}</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="row mb-3" id="bloc-risques">
+        <div class="col-md-3 col-form-label">{{ form.risques.label }}</div>
+        <div class="col-md-7">
+          {% with groupes=form.groupes_risques %}
+          {% if groupes %}
+            <div class="input-group input-group-sm mb-2">
+              <label class="input-group-text" for="cocher-categorie">Cocher tous les risques de la catégorie</label>
+              <select class="form-select" id="cocher-categorie">{% for c in form.categories_proposees %}<option>{{ c }}</option>{% endfor %}</select>
+              <button class="btn btn-outline-primary" type="button" id="bouton-cocher">Cocher</button>
+              <button class="btn btn-outline-secondary" type="button" id="bouton-decocher">Tout décocher</button>
+            </div>
+            <input class="form-control form-control-sm mb-2" type="search" id="filtre-risques" placeholder="Filtrer par unité ou danger…" aria-label="Filtrer les risques">
+            <div class="liste-risques">
+              {% for unite, risques in groupes %}
+                <div class="groupe" data-unite="{{ unite.nom|lower }}">
+                  <div class="unite">{{ unite.nom }}</div>
+                  {% for r, coche in risques %}
+                    <label data-texte="{{ unite.nom|lower }} {{ r.danger|lower }} {{ r.categorie.nom|lower }}">
+                      <input class="form-check-input" type="checkbox" name="{{ form.risques.html_name }}" value="{{ r.pk }}" data-categorie="{{ r.categorie.nom }}" data-unite="{{ unite.pk }}"{% if coche %} checked{% endif %}>
+                      {{ r.danger }}
+                      <span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% elif r.niveau == 'moyen' %}warning{% else %}success{% endif %} ms-auto">{{ r.niveau|capfirst }} ({{ r.cotation }})</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            </div>
+            <small class="form-text text-body-secondary"><b id="compteur-risques"></b>{% if form.risques_caches %} L'action est aussi liée à {{ form.risques_caches|length }} risque{{ form.risques_caches|length|pluralize }} d'autres structures, conservé{{ form.risques_caches|length|pluralize }} tel{{ form.risques_caches|length|pluralize }} quel{{ form.risques_caches|length|pluralize }}.{% endif %}</small>
+          {% else %}
+            <p class="text-body-secondary mb-0">Aucun risque saisi pour l'instant.</p>
+          {% endif %}
+          {% endwith %}
+          {% for erreur in form.risques.errors %}<div class="text-danger small">{{ erreur }}</div>{% endfor %}
+        </div>
+      </div>
+
+      {% if form.structure %}<div id="bloc-structure">{% include "core/_champ_ligne.html" with field=form.structure %}</div>{% endif %}
+      {% include "core/_champ_ligne.html" with field=form.responsable %}
+      <div class="row mb-3">
+        <label class="col-md-3 col-form-label" for="{{ form.echeance.id_for_label }}">{{ form.echeance.label }}</label>
+        <div class="col-md-3">{{ form.echeance }}{% for e in form.echeance.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <label class="col-md-1 col-form-label" for="{{ form.duree.id_for_label }}">{{ form.duree.label }}</label>
+        <div class="col-md-3">{{ form.duree }}{% for e in form.duree.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      </div>
+      <div class="row mb-3">
+        <label class="col-md-3 col-form-label" for="{{ form.cout.id_for_label }}">{{ form.cout.label }}</label>
+        <div class="col-md-3">{{ form.cout }}{% for e in form.cout.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <label class="col-md-1 col-form-label" for="{{ form.statut.id_for_label }}">{{ form.statut.label }}</label>
+        <div class="col-md-3">{{ form.statut }}{% for e in form.statut.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+      </div>
+      {% include "core/_champ_ligne.html" with field=form.date_realisation %}
+
+      <div class="row"><div class="col-md-7 offset-md-3">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        {% if avec_ajouter %}<button type="submit" name="enregistrer_ajouter" value="1" class="btn btn-outline-primary">Enregistrer et ajouter</button>{% endif %}
+        <a class="btn btn-danger" href="{{ url_liste }}">Annuler</a>
+      </div></div>
+    </form>
+  </div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'core/actions.js' %}"></script>{% endblock %}

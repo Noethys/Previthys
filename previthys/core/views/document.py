@@ -7,7 +7,7 @@ from django.http import Http404
 from django.views.generic import TemplateView
 
 from core.models import VersionDuerp
-from core.utils import construire_donnees, filtre_structure, normaliser_donnees
+from core.utils import construire_donnees, construire_mesures_generales, filtre_structure, normaliser_donnees
 from core.views.crud import Lecture
 
 
@@ -22,7 +22,8 @@ class Document(Lecture, TemplateView):
             version = VersionDuerp.objects.filter(filtre_structure(self.request.user), pk=pk).first()
             if not version:
                 raise Http404("Version introuvable")
-            ctx.update({"donnees": normaliser_donnees(version.donnees), "version": version})
+            ctx.update({"donnees": normaliser_donnees(version.donnees), "version": version, "mesures_generales": version.mesures_generales})
         else:
             ctx["donnees"] = normaliser_donnees(construire_donnees(self.request.user))
+            ctx["mesures_generales"] = construire_mesures_generales(self.request.user)
         return ctx

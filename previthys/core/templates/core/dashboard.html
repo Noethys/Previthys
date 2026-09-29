@@ -37,7 +37,7 @@
             <div class="progress-bar niveau-{{ n.code }}" style="width: {{ n.pourcentage }}%">{% if n.n %}{{ n.pourcentage }}%{% endif %}</div>
           </div>
         {% endfor %}
-        <small class="text-body-secondary">Cotation = fréquence × gravité × maîtrise. Faible jusqu'à 40, moyen de 41 à 196, critique à partir de 280.</small>
+        <small class="text-body-secondary">{{ note_cotation }}</small>
       </div></div>
     </div>
     <div class="col-lg-7 mb-3">
@@ -45,10 +45,10 @@
         <h2 class="h6">Actions à suivre</h2>
         <table class="table table-sm">
           {% for a in actions_en_retard %}
-            <tr><td>{{ a.description|truncatechars:70 }}<br><small class="text-body-secondary">{{ a.risque.unite.nom }}</small></td><td><span class="badge text-bg-danger">En retard</span></td><td>{{ a.echeance|date:"d/m/Y" }}</td></tr>
+            <tr><td>{{ a.description|truncatechars:70 }}<br><small class="text-body-secondary">{{ a.resume_unites }}</small></td><td><span class="badge text-bg-danger">En retard</span></td><td>{{ a.echeance|date:"d/m/Y" }}</td></tr>
           {% endfor %}
           {% for a in actions_a_venir %}
-            <tr><td>{{ a.description|truncatechars:70 }}<br><small class="text-body-secondary">{{ a.risque.unite.nom }}</small></td><td>{{ a.get_statut_display }}</td><td>{{ a.echeance|date:"d/m/Y" }}</td></tr>
+            <tr><td>{{ a.description|truncatechars:70 }}<br><small class="text-body-secondary">{{ a.resume_unites }}</small></td><td>{{ a.get_statut_display }}</td><td>{{ a.echeance|date:"d/m/Y" }}</td></tr>
           {% empty %}
             {% if not actions_en_retard %}<tr><td class="text-body-secondary">Aucune action en cours.</td></tr>{% endif %}
           {% endfor %}

@@ -6,7 +6,7 @@
 from django import forms
 
 from core.forms.base import FormulaireBase
-from core.models import CategorieRisque
+from core.models import CategorieAction, CategorieRisque
 
 
 class FormulaireCategorie(FormulaireBase):
@@ -19,5 +19,16 @@ class FormulaireCategorie(FormulaireBase):
         nom = self.cleaned_data["nom"].strip()
         doublons = CategorieRisque.objects.filter(nom__iexact=nom).exclude(pk=self.instance.pk)
         if doublons.exists():
+            raise forms.ValidationError("Cette catégorie existe déjà.")
+        return nom
+
+
+class FormulaireCategorieAction(FormulaireCategorie):
+    class Meta(FormulaireCategorie.Meta):
+        model = CategorieAction
+
+    def clean_nom(self):
+        nom = self.cleaned_data["nom"].strip()
+        if CategorieAction.objects.filter(nom__iexact=nom).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError("Cette catégorie existe déjà.")
         return nom

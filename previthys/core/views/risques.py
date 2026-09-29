@@ -9,8 +9,8 @@ from django.utils.text import Truncator
 
 from core.forms.actions import FormulaireActionRisque
 from core.forms.risques import FormulaireRisque
-from core.models import PieceJointe, Risque
-from core.utils import filtre_structure
+from core.models import NOTE_COTATION, ActionPrevention, PieceJointe, Risque, actions_propres
+from core.utils import filtre_actions, filtre_structure
 from core.utils.journal import consigner
 from core.views import crud
 
@@ -34,7 +34,8 @@ def liste_actions(risque):
     if not actions:
         return format_html('<span class="text-body-secondary">Aucune</span>')
     return format_html('<ul class="list-unstyled mb-0 liste-actions">{}</ul>', format_html_join(
-        "", '<li>{} {}</li>', ((badge_statut(a), Truncator(a.description).chars(60)) for a in actions)))
+        "", '<li>{} {}{}</li>', ((badge_statut(a), Truncator(a.description).chars(60),
+                                  format_html(' <small class="text-body-secondary">(commune)</small>') if a.est_commune else "") for a in actions)))
 
 
 class AjoutPiecesJointes:
@@ -51,13 +52,13 @@ class AjoutPiecesJointes:
 class Liste(crud.Liste):
     model = Risque
     titre = "Risques"
-    description = "Cotation = gravité × fréquence : faible (1-3), moyen (4-8), critique (9-16)."
+    description = NOTE_COTATION
     colonnes = ["ID", "Unité", "Danger", "Catégorie", "Fréquence", "Gravité", "Maîtrise", "Niveau", "Actions de prévention", "Fichiers"]
     ordre = "7,desc"
     url_ajouter, url_modifier, url_supprimer = "risques_ajouter", "risques_modifier", "risques_supprimer"
 
     def get_queryset(self):
-        return Risque.objects.select_related("unite", "categorie").prefetch_related("actions").annotate(nbre_pieces_jointes=Count("pieces_jointes")).filter(filtre_structure(self.request.user, "unite__"))
+        return Risque.objects.select_related("unite", "categorie").prefetch_related("actions__risques").annotate(nbre_pieces_jointes=Count("pieces_jointes")).filter(filtre_structure(self.request.user, "unite__"))
 
     def cellules(self, o):
         return [o.pk, o.unite.nom, o.danger, o.categorie.nom, o.frequence, o.gravite, o.maitrise, (badge_niveau(o), o.cotation), (liste_actions(o), len(o.actions.all())), o.nbre_pieces_jointes]
@@ -84,10 +85,16 @@ class Modifier(AjoutPiecesJointes, crud.Modifier):
         if self.request.user.has_perm("core.view_actionprevention"):
             # Un formulaire prérempli par action (fenêtre « Modifier ») et un formulaire vierge (fenêtre « Ajouter »).
             # auto_id distinct pour chaque fenêtre : les identifiants HTML restent uniques dans la page.
+            # Pour une action commune, seules les unités visibles par l'utilisateur sont nommées.
+            visibles = set(Risque.objects.filter(filtre_structure(self.request.user, "unite__")).values_list("pk", flat=True))
             ctx["actions_risque"] = [
-                (a, badge_statut(a), FormulaireActionRisque(instance=a, user=self.request.user, auto_id="id_action%d_%%s" % a.pk))
-                for a in self.object.actions.select_related("responsable")]
+                (a, badge_statut(a), FormulaireActionRisque(instance=a, user=self.request.user, auto_id="id_action%d_%%s" % a.pk),
+                 len(a.risques.all()), sorted({r.unite.nom for r in a.risques.all() if r.pk in visibles}))
+                for a in self.object.actions.select_related("responsable", "categorie").prefetch_related("risques__unite")]
             ctx["form_nouvelle_action"] = FormulaireActionRisque(user=self.request.user, auto_id="id_nouvelle_action_%s")
+            if self.request.user.has_perm("core.change_actionprevention"):
+                ctx["actions_rattachables"] = (ActionPrevention.objects.filter(filtre_actions(self.request.user)).filter(risques__isnull=False)
+                                               .exclude(risques=self.object).distinct().prefetch_related("risques__unite").order_by("description"))
         return ctx
 
 
@@ -96,3 +103,19 @@ class Supprimer(crud.Supprimer):
 
     def get_queryset(self):
         return Risque.objects.filter(filtre_structure(self.request.user, "unite__"))
+
+    def dependances_supplementaires(self):
+        return dependances_actions([self.object])
+
+
+def dependances_actions(risques):
+    """Actions supprimées avec ces risques (celles qui n'en ont pas d'autre) et actions communes qui les perdent."""
+    propres = actions_propres(risques)
+    communes = ActionPrevention.objects.filter(risques__in=risques).exclude(pk__in=propres).distinct().count()
+    resultat, n = [], propres.count()
+    if n:
+        resultat.append(("action de prévention" if n == 1 else "actions de prévention", n))
+    if communes:
+        resultat.append(("action commune détachée (conservée pour les autres risques)" if communes == 1
+                         else "actions communes détachées (conservées pour les autres risques)", communes))
+    return resultat
