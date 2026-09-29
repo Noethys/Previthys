@@ -1,3 +1,10 @@
+Version 1.2.6 (29/09/2026) :
+
+- Ajout de l'introduction au PDF
+- Améliorations de la mise en page du PDF
+- Ajout des boutons de filtres à la liste des risques et du plan d'actions
+- Améliorations diverses
+
 Version 1.2.5 (29/09/2026) :
 
 - Ajout de widgets au tableau de bord
