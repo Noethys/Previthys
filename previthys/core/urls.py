@@ -31,6 +31,9 @@ urlpatterns = [
     path("risques/ajouter/", risques.Ajouter.as_view(), name="risques_ajouter"),
     path("risques/<int:pk>/modifier/", risques.Modifier.as_view(), name="risques_modifier"),
     path("risques/<int:pk>/supprimer/", risques.Supprimer.as_view(), name="risques_supprimer"),
+    path("risques/<int:risque>/actions/ajouter/", actions.RisqueAjouter.as_view(), name="risques_actions_ajouter"),
+    path("risques/<int:risque>/actions/<int:pk>/modifier/", actions.RisqueModifier.as_view(), name="risques_actions_modifier"),
+    path("risques/<int:risque>/actions/<int:pk>/supprimer/", actions.RisqueSupprimer.as_view(), name="risques_actions_supprimer"),
     path("risques/pieces-jointes/<int:pk>/telecharger/", pieces_jointes.Telecharger.as_view(), name="pieces_jointes_telecharger"),
     path("risques/pieces-jointes/<int:pk>/supprimer/", pieces_jointes.Supprimer.as_view(), name="pieces_jointes_supprimer"),
 

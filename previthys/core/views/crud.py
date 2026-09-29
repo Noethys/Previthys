@@ -128,8 +128,11 @@ class Supprimer(AccesDuerp, DeleteView):
         collecteur.collect([self.object])
         ctx["bloquants"] = self._decrire(collecteur.protected)
         ctx["dependances"] = [(self._nom(m, len(o)), len(o)) for m, o in collecteur.model_objs.items() if m is not self.model]
-        ctx.update({"titre": self.titre, "url_liste": reverse(self.url_liste)})
+        ctx.update({"titre": self.titre, "url_liste": self.url_retour()})
         return ctx
+
+    def url_retour(self):
+        return reverse(self.url_liste)
 
     @staticmethod
     def _nom(modele, nombre):
@@ -147,7 +150,7 @@ class Supprimer(AccesDuerp, DeleteView):
             self.object.delete()
         except ProtectedError as e:
             messages.error(self.request, "Suppression impossible : cet élément est utilisé par %s." % ", ".join(self._decrire(e.protected_objects)))
-            return HttpResponseRedirect(reverse(self.url_liste))
+            return HttpResponseRedirect(self.url_retour())
         consigner(self.request, "suppression", self.object)
         messages.success(self.request, "Suppression effectuée")
-        return HttpResponseRedirect(reverse(self.url_liste))
+        return HttpResponseRedirect(self.url_retour())

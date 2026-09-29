@@ -7,6 +7,7 @@ import os
 import uuid
 
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -143,6 +144,8 @@ class ActionPrevention(models.Model):
     description = models.TextField("Action de prévention")
     responsable = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name="Responsable", on_delete=models.SET_NULL, blank=True, null=True)
     echeance = models.DateField("Échéance", blank=True, null=True)
+    duree = models.CharField("Durée", max_length=100, blank=True)
+    cout = models.DecimalField("Coût", max_digits=12, decimal_places=2, blank=True, null=True, validators=[MinValueValidator(0)])
     statut = models.CharField("Statut", max_length=20, choices=STATUTS_ACTIONS, default="a_faire")
     date_realisation = models.DateField("Date de réalisation", blank=True, null=True)
 
@@ -150,6 +153,13 @@ class ActionPrevention(models.Model):
         verbose_name = "action de prévention"
         verbose_name_plural = "actions de prévention"
         ordering = ["echeance"]
+
+    @property
+    def cout_affiche(self):
+        """Coût au format français : 1 250,00 €."""
+        if self.cout is None:
+            return ""
+        return ("{:,.2f}".format(self.cout)).replace(",", "\u202f").replace(".", ",") + "\u00a0€"
 
     @property
     def en_retard(self):

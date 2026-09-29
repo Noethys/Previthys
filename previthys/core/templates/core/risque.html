@@ -1,0 +1,63 @@
+{% extends "core/form.html" %}
+{% comment %}Fiche d'un risque : formulaire du risque (core/form.html) + ses actions de prévention, gérées dans des fenêtres modales.{% endcomment %}
+{% block complements %}
+{% if perms.core.view_actionprevention %}
+  <div class="card mt-3" id="actions">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="h6 mb-0">Actions de prévention{% if actions_risque %} <span class="badge text-bg-secondary">{{ actions_risque|length }}</span>{% endif %}</h2>
+      {% if object and perms.core.add_actionprevention %}
+        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#action-nouvelle">Ajouter une action</button>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      {% if not object %}
+        <p class="text-body-secondary mb-0">Enregistrez d'abord le risque : vous pourrez ensuite lui associer des actions de prévention.</p>
+      {% elif actions_risque %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Action</th><th>Responsable</th><th>Échéance</th><th>Durée</th><th class="text-end">Coût</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+              {% for action, statut, form_action in actions_risque %}
+                <tr>
+                  <td>{{ action.description|linebreaksbr }}</td>
+                  <td>{% if action.responsable %}{{ action.responsable.get_full_name|default:action.responsable.get_username }}{% endif %}</td>
+                  <td class="text-nowrap">{{ action.echeance|date:"d/m/Y" }}</td>
+                  <td>{{ action.duree }}</td>
+                  <td class="text-end text-nowrap">{{ action.cout_affiche }}</td>
+                  <td class="text-nowrap">{{ statut }}{% if action.date_realisation %}<br><small class="text-body-secondary">le {{ action.date_realisation|date:"d/m/Y" }}</small>{% endif %}</td>
+                  <td class="text-end text-nowrap">
+                    {% if perms.core.change_actionprevention %}
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#action-{{ action.pk }}">Modifier</button>
+                    {% endif %}
+                    {% if perms.core.delete_actionprevention %}
+                      <form method="post" action="{% url 'risques_actions_supprimer' object.pk action.pk %}" class="d-inline" data-confirmer="Supprimer cette action de prévention ?">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                      </form>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-body-secondary mb-0">Aucune action de prévention pour ce risque.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if object %}
+    {% if perms.core.add_actionprevention %}
+      {% url 'risques_actions_ajouter' object.pk as url_action %}
+      {% include "core/_modale_action.html" with action=None titre_modale="Ajouter une action de prévention" form_action=form_nouvelle_action url_action=url_action %}
+    {% endif %}
+    {% if perms.core.change_actionprevention %}
+      {% for action, statut, form_action in actions_risque %}
+        {% url 'risques_actions_modifier' object.pk action.pk as url_action %}
+        {% include "core/_modale_action.html" with titre_modale="Modifier une action de prévention" url_action=url_action %}
+      {% endfor %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+{% endblock %}

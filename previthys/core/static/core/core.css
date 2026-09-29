@@ -42,3 +42,7 @@ table.table-document th:nth-child(5), table.table-document td:nth-child(5) { wid
 
 /* Photos jointes à un risque, affichées et imprimées dans le document unique, à une taille raisonnable. */
 .photo-risque-impression { width: 90px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid var(--bs-border-color); }
+
+/* Liste des risques : actions de prévention associées, une par ligne. */
+.liste-actions li { font-size: .875rem; white-space: normal; }
+.liste-actions li + li { margin-top: 2px; }

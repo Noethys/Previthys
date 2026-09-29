@@ -16,15 +16,18 @@ from core.utils import filtre_structure
 class FormulaireAction(FormulaireBase):
     class Meta:
         model = ActionPrevention
-        fields = ["risque", "description", "responsable", "echeance", "statut", "date_realisation"]
+        fields = ["risque", "description", "responsable", "echeance", "duree", "cout", "statut", "date_realisation"]
+        labels = {"cout": "Coût (€)"}
         widgets = {
+            "duree": forms.TextInput(attrs={"placeholder": "Ex. : 2 jours, 1 demi-journée, 3 heures"}),
+            "cout": forms.NumberInput(attrs={"step": "0.01", "min": "0", "placeholder": "0,00"}),
             "echeance": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
             "date_realisation": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.user is not None:
+        if self.user is not None and "risque" in self.fields:
             self.fields["risque"].queryset = Risque.objects.filter(filtre_structure(self.user, "unite__")).select_related("unite")
         self.fields["responsable"].queryset = get_user_model().objects.filter(is_active=True)
         self.fields["responsable"].label_from_instance = lambda u: u.get_full_name() or u.get_username()
@@ -38,3 +41,10 @@ class FormulaireAction(FormulaireBase):
         else:
             donnees["date_realisation"] = None
         return donnees
+
+
+class FormulaireActionRisque(FormulaireAction):
+    """Action saisie depuis la fiche d'un risque : le risque est imposé par la page, il n'est donc pas proposé."""
+
+    class Meta(FormulaireAction.Meta):
+        fields = ["description", "responsable", "echeance", "duree", "cout", "statut", "date_realisation"]
