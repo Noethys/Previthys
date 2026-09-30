@@ -1,3 +1,8 @@
+Version 1.2.7 (30/09/2026) :
+
+- Ajout de l'aide
+- Ajout de filtres et amélioration du menu
+
 Version 1.2.6 (29/09/2026) :
 
 - Ajout de l'introduction au PDF
