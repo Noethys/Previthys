@@ -22,24 +22,22 @@
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Évaluation</a>
           <div class="dropdown-menu">
             <a class="dropdown-item" href="{% url 'unites_liste' %}">Unités de travail</a>
-            <a class="dropdown-item" href="{% url 'risques_liste' %}">Risques</a>
             <a class="dropdown-item" href="{% url 'categories_liste' %}">Catégories de risques</a>
+            <a class="dropdown-item" href="{% url 'risques_liste' %}">Risques</a>
           </div>
         </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Prévention</a>
           <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'actions_liste' %}">Plan d'actions</a>
             {% if perms.core.view_categorieaction %}<a class="dropdown-item" href="{% url 'categories_actions_liste' %}">Catégories d'actions</a>{% endif %}
-            <a class="dropdown-item" href="{% url 'versions_liste' %}">Versions archivées</a>
+            <a class="dropdown-item" href="{% url 'actions_liste' %}">Plan d'actions</a>
           </div>
         </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Document</a>
           <div class="dropdown-menu">
             <a class="dropdown-item" href="{% url 'document' %}">Document unique (impression)</a>
-            {% if perms.core.change_introduction %}<a class="dropdown-item" href="{% url 'introduction' %}">Introduction du document</a>{% endif %}
-            <a class="dropdown-item" href="{% url 'export_xlsx' %}">Exporter en Excel (XLSX)</a>
+            <a class="dropdown-item" href="{% url 'versions_liste' %}">Versions archivées</a>
           </div>
         </li>
         {% endif %}

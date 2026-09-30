@@ -3,7 +3,7 @@
 #  Previthys, application de gestion du DUERP (Document Unique d’Évaluation des Risques Professionnels).
 #  Distribué sous licence GNU GPL.
 
-from django.db.models import Count
+from django.db.models import Count, F
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
@@ -11,7 +11,7 @@ from django.utils.text import Truncator
 
 from core.forms.actions import FormulaireActionRisque
 from core.forms.risques import FormulaireRisque
-from core.models import NOTE_COTATION, ActionPrevention, PieceJointe, Risque, UniteTravail, actions_propres
+from core.models import NOTE_COTATION, SEUIL_CRITIQUE, SEUIL_MOYEN, ActionPrevention, CategorieRisque, PieceJointe, Risque, UniteTravail, actions_propres
 from core.utils import filtre_actions, filtre_structure
 from core.utils import tableau_de_bord as tdb
 from core.utils.journal import consigner
@@ -70,18 +70,32 @@ class Liste(crud.Liste):
         valeur = self.request.GET.get("unite", "")
         return valeur if valeur.isdigit() else ""
 
-    def listes_filtres(self):
-        """Filtre « Unité » : unités visibles, avec leur nombre de risques."""
-        comptes = dict(self.base().values_list("unite").annotate(n=Count("pk", distinct=True)).values_list("unite", "n"))
-        unites = UniteTravail.objects.filter(filtre_structure(self.request.user)).order_by("nom")
-        options = [("", "Toutes les unités (%d)" % sum(comptes.values()))]
-        options += [(str(u.pk), "%s (%d)" % (u.nom, comptes.get(u.pk, 0))) for u in unites]
-        return [{"nom": "unite", "libelle": "Unité", "valeur": self.unite(), "options": options}]
+    def categorie(self):
+        valeur = self.request.GET.get("categorie", "")
+        return valeur if valeur.isdigit() else ""
 
-    def get_queryset(self):
-        qs = self.base()
-        if self.unite():
-            qs = qs.filter(unite_id=int(self.unite()))
+    NIVEAUX = [("critique", "Critique"), ("moyen", "Moyen"), ("faible", "Faible")]
+
+    def niveau(self):
+        valeur = self.request.GET.get("niveau", "")
+        return valeur if valeur in dict(self.NIVEAUX) else ""
+
+    @staticmethod
+    def filtrer(qs, unite="", categorie="", niveau=""):
+        """Applique les listes déroulantes (unité, catégorie, niveau) ; une valeur vide ne filtre pas."""
+        if unite:
+            qs = qs.filter(unite_id=int(unite))
+        if categorie:
+            qs = qs.filter(categorie_id=int(categorie))
+        if niveau:
+            qs = qs.annotate(cotation_calculee=F("frequence") * F("gravite") * F("maitrise"))
+            qs = {"faible": qs.filter(cotation_calculee__lt=SEUIL_MOYEN),
+                  "moyen": qs.filter(cotation_calculee__gte=SEUIL_MOYEN, cotation_calculee__lt=SEUIL_CRITIQUE),
+                  "critique": qs.filter(cotation_calculee__gte=SEUIL_CRITIQUE)}[niveau]
+        return qs
+
+    def filtrer_tableau_de_bord(self, qs):
+        """Filtres posés par un lien du tableau de bord (case de la matrice, points de vigilance, à réévaluer)."""
         g, f = self.request.GET.get("gravite", ""), self.request.GET.get("frequence", "")
         if g.isdigit() and f.isdigit():
             qs = qs.filter(gravite=int(g), frequence=int(f))
@@ -91,6 +105,43 @@ class Liste(crud.Liste):
         if filtre == "a_reevaluer":
             return tdb.a_reevaluer(qs)
         return qs
+
+    def compter(self, cle, **filtres):
+        """Nombre de risques par valeur de `cle` (fonction appliquée à chaque risque), les autres filtres étant appliqués."""
+        comptes = {}
+        for r in self.filtrer_tableau_de_bord(self.filtrer(self.base(), **filtres)):
+            comptes[cle(r)] = comptes.get(cle(r), 0) + 1
+        return comptes
+
+    def listes_filtres(self):
+        """Filtres « Unité », « Catégorie » et « Niveau » sur une ligne. Chacun compte les risques en tenant compte
+        des deux autres (et des filtres du tableau de bord)."""
+        if hasattr(self, "_listes_filtres"):
+            return self._listes_filtres
+        unite, categorie, niveau = self.unite(), self.categorie(), self.niveau()
+
+        comptes = self.compter(lambda r: r.unite_id, categorie=categorie, niveau=niveau)
+        unites = UniteTravail.objects.filter(filtre_structure(self.request.user)).order_by("nom")
+        options_unites = [("", "Toutes les unités (%d)" % sum(comptes.values()))]
+        options_unites += [(str(u.pk), "%s (%d)" % (u.nom, comptes.get(u.pk, 0))) for u in unites]
+
+        comptes = self.compter(lambda r: r.categorie_id, unite=unite, niveau=niveau)
+        options_categories = [("", "Toutes les catégories (%d)" % sum(comptes.values()))]
+        options_categories += [(str(c.pk), "%s (%d)" % (c.nom, comptes.get(c.pk, 0))) for c in CategorieRisque.objects.all()]
+
+        comptes = self.compter(lambda r: r.niveau, unite=unite, categorie=categorie)
+        options_niveaux = [("", "Tous les niveaux (%d)" % sum(comptes.values()))]
+        options_niveaux += [(cle, "%s (%d)" % (libelle, comptes.get(cle, 0))) for cle, libelle in self.NIVEAUX]
+
+        self._listes_filtres = [
+            {"nom": "unite", "libelle": "Unité", "valeur": unite, "options": options_unites},
+            {"nom": "categorie", "libelle": "Catégorie", "valeur": categorie, "options": options_categories},
+            {"nom": "niveau", "libelle": "Niveau", "valeur": niveau, "options": options_niveaux},
+        ]
+        return self._listes_filtres
+
+    def get_queryset(self):
+        return self.filtrer_tableau_de_bord(self.filtrer(self.base(), self.unite(), self.categorie(), self.niveau()))
 
     FILTRES = {"vigilance": "Moyens ou critiques sans action en cours", "a_reevaluer": "À réévaluer après une action terminée"}
 
@@ -108,7 +159,8 @@ class Liste(crud.Liste):
         if not actifs:
             return []
         n = len(self.object_list)
-        url = reverse("risques_liste") + ("?unite=%s" % self.unite() if self.unite() else "")
+        conserves = [(k, v) for k, v in (("unite", self.unite()), ("categorie", self.categorie()), ("niveau", self.niveau())) if v]
+        url = reverse("risques_liste") + ("?" + "&".join("%s=%s" % kv for kv in conserves) if conserves else "")
         return [{"titre": "Filtre", "boutons": [{"libelle": " · ".join(actifs) + "  ✕", "nombre": n, "actif": True, "url": url}]}]
 
     def cellules(self, o):

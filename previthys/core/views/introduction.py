@@ -3,7 +3,7 @@
 #  Previthys, application de gestion du DUERP (Document Unique d’Évaluation des Risques Professionnels).
 #  Distribué sous licence GNU GPL.
 
-"""Page « Introduction du document » : texte de présentation et logo du document unique, par structure."""
+"""Page « Paramètres du document » : texte de présentation et logo du document unique, par structure."""
 
 from django import forms
 from django.contrib import messages
@@ -66,7 +66,7 @@ class Modifier(LoginRequiredMixin, PermissionRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx.update({"titre": "Introduction du document unique", "structure": self.structure, "introduction": self.introduction,
+        ctx.update({"titre": "Paramètres du document", "structure": self.structure, "introduction": self.introduction,
                     "onglets": [(s, s == self.structure) for s in self.structures_modifiables()] if len(self.structures_modifiables()) > 1 else [],
                     "apercu": mise_en_forme(self.introduction.texte) if self.introduction else "", "methode": methode()})
         return ctx
@@ -87,6 +87,6 @@ class Modifier(LoginRequiredMixin, PermissionRequiredMixin, FormView):
         if details or creation:
             intro.save()
             consigner(self.request, "creation" if creation else "modification", intro, "\n".join(details))
-        messages.success(self.request, "Introduction enregistrée")
+        messages.success(self.request, "Paramètres enregistrés")
         url = reverse("introduction")
         return HttpResponseRedirect(url + ("?structure=%d" % self.structure.pk if self.structure else ""))

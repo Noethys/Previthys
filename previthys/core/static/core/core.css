@@ -39,8 +39,13 @@ table.table-document th:nth-child(4), table.table-document td:nth-child(4) { wid
   table.table-document th:nth-child(3), table.table-document td:nth-child(3) { width: 6rem; font-size: .9rem; }   /* juste « 10 × 10 × 10 » */
   table.table-document th:nth-child(4), table.table-document td:nth-child(4) { width: auto; }
 }
-/* Nom de l'unité de travail : plus d'espace au-dessus pour bien séparer les unités */
-.document-unique .titre-unite { margin-top: 3rem; }
+/* Nom de l'unité de travail : bandeau foncé pleine largeur, collé au tableau, avec de l'espace au-dessus pour bien
+   séparer les unités. À l'impression, le fond est forcé (sinon texte blanc sur blanc) et le bandeau ne reste jamais
+   seul en bas de page. */
+.document-unique .titre-unite { margin: 3rem 0 0; padding: .45rem .75rem; background: #212529; color: #fff; font-size: 1.15rem;
+  font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact; break-after: avoid; page-break-after: avoid; }
+.document-unique .titre-unite .effectif-unite { font-size: .8em; font-weight: 400; color: #ced4da; }
+.document-unique .description-unite { margin: .5rem 0; break-after: avoid; page-break-after: avoid; }
 /* Colonne « Actions de prévention » : une action par ligne, précédée de son macaron de statut */
 .action-document + .action-document { margin-top: .3rem; padding-top: .3rem; border-top: 1px dashed var(--bs-border-color); }
 
