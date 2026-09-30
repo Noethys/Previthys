@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load aide %}
 {% load static %}
 {% block titre_page %}{{ titre }}{% endblock %}
 {% block styles %}
@@ -8,7 +9,7 @@
 {% block contenu %}
   <div class="d-flex justify-content-between align-items-start flex-wrap">
     <div>
-      <h1 class="h4">{{ titre }}</h1>
+      <h1 class="h4">{{ titre }} {% lien_aide %}</h1>
       {% if description %}<p class="text-body-secondary">{{ description }}</p>{% endif %}
     </div>
     {% if url_ajouter %}<a class="btn btn-success mb-2" href="{{ url_ajouter }}">{{ libelle_ajouter }}</a>{% endif %}

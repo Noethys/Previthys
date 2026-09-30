@@ -1,9 +1,10 @@
 {% extends "core/base.html" %}
+{% load aide %}
 {% block titre_page %}{{ titre }}{% endblock %}
 {% block contenu %}
   <div class="d-flex justify-content-between align-items-start flex-wrap">
     <div>
-      <h1 class="h4">{{ titre }}</h1>
+      <h1 class="h4">{{ titre }} {% lien_aide %}</h1>
       <p class="text-body-secondary">Page de garde et présentation, placées au début du document unique. La méthode de cotation, la liste des unités de travail et les axes du plan d'actions sont ajoutés automatiquement à la suite.</p>
     </div>
     <a class="btn btn-outline-secondary mb-2" href="{% url 'document' %}">Voir le document</a>

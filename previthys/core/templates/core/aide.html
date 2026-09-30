@@ -1,0 +1,496 @@
+{% extends "core/base.html" %}
+{% block titre_page %}Aide{% endblock %}
+{% block contenu %}
+<div class="row aide">
+  {# ---------- Sommaire ---------- #}
+  <nav class="col-lg-3 d-print-none" aria-label="Sommaire de l'aide">
+    <div class="sommaire-aide">
+      <p class="titre-partie">Utiliser Previthys</p>
+      <ol class="list-unstyled">
+        <li><a href="#presentation">Présentation</a></li>
+        <li><a href="#premiers-pas">Premiers pas</a></li>
+        <li><a href="#vue-ensemble">Vue d'ensemble</a></li>
+        <li><a href="#listes">Travailler avec les listes</a></li>
+        <li><a href="#unites">Unités de travail</a></li>
+        <li><a href="#categories-risques">Catégories de risques</a></li>
+        <li><a href="#risques">Risques et cotation</a></li>
+        <li><a href="#pieces-jointes">Photos et documents joints</a></li>
+        <li><a href="#actions-depuis-risque">Actions depuis la fiche d'un risque</a></li>
+        <li><a href="#categories-actions">Catégories d'actions</a></li>
+        <li><a href="#plan-actions">Plan d'actions</a></li>
+        <li><a href="#document">Document unique</a></li>
+        <li><a href="#parametres-document">Paramètres du document</a></li>
+        <li><a href="#versions">Versions archivées</a></li>
+      </ol>
+      <p class="titre-partie">Administrer Previthys</p>
+      <ol class="list-unstyled">
+        <li><a href="#droits">Utilisateurs et droits</a></li>
+        <li><a href="#structures">Structures</a></li>
+        <li><a href="#journal">Journal des modifications</a></li>
+        <li><a href="#mise-a-jour">Mise à jour de l'application</a></li>
+        <li><a href="#installation">Installation et configuration</a></li>
+        <li><a href="#import">Import d'un DUERP existant</a></li>
+        <li><a href="#securite">Sécurité</a></li>
+      </ol>
+      <p class="titre-partie">Compléments</p>
+      <ol class="list-unstyled">
+        <li><a href="#faq">Questions fréquentes</a></li>
+        <li><a href="#glossaire">Glossaire</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  {# ---------- Contenu ---------- #}
+  <div class="col-lg-9 contenu-aide">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <h1 class="h4">Aide de Previthys</h1>
+      <button class="btn btn-sm btn-outline-secondary" type="button" data-imprimer>Imprimer l'aide</button>
+    </div>
+
+    <h2 class="partie-aide">Utiliser Previthys</h2>
+
+    {# ================================================================ #}
+    <section id="presentation">
+      <h3>Présentation</h3>
+      <p>Previthys sert à rédiger, suivre et archiver le <b>document unique d'évaluation des risques professionnels</b> (DUERP) d'une collectivité ou d'une association.</p>
+      <p>Tout employeur doit évaluer les risques auxquels ses agents sont exposés, consigner cette évaluation dans le document unique et en tirer un plan d'actions de prévention. Le document doit être tenu à jour : au moins une fois par an dans les structures d'au moins 11 agents, et dans tous les cas lors d'un changement important (nouveaux locaux, nouvel équipement, réorganisation, accident…). Chaque version doit être conservée 40 ans.</p>
+      <p>Previthys organise ce travail en quatre étapes :</p>
+      <ol>
+        <li><b>Découper</b> la structure en <a href="#unites">unités de travail</a> (services, métiers, sites).</li>
+        <li><b>Évaluer</b> les <a href="#risques">risques</a> de chaque unité et les coter.</li>
+        <li><b>Planifier</b> les <a href="#plan-actions">actions de prévention</a> et suivre leur réalisation.</li>
+        <li><b>Éditer et archiver</b> le <a href="#document">document unique</a>, puis en garder une <a href="#versions">version figée</a> à chaque mise à jour.</li>
+      </ol>
+    </section>
+
+    {# ================================================================ #}
+    <section id="premiers-pas">
+      <h3>Premiers pas</h3>
+      <h4>Se connecter</h4>
+      <p>Saisissez l'identifiant et le mot de passe fournis par votre administrateur. Par sécurité, après plusieurs mots de passe erronés (5 par défaut), le compte est verrouillé quelques minutes (15 par défaut) depuis ce poste. La session se ferme d'elle-même après 12 heures ; pensez à vous déconnecter sur un poste partagé.</p>
+      <h4>Se repérer</h4>
+      <p>La barre du haut donne accès à toutes les pages :</p>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th style="width:25%">Menu</th><th>Contenu</th></tr></thead>
+        <tbody>
+          <tr><td>Vue d'ensemble</td><td>Le <a href="#vue-ensemble">tableau de bord</a> : chiffres clés, alertes et indicateurs.</td></tr>
+          <tr><td>Évaluation</td><td><a href="#unites">Unités de travail</a>, <a href="#categories-risques">Catégories de risques</a>, <a href="#risques">Risques</a>.</td></tr>
+          <tr><td>Prévention</td><td><a href="#categories-actions">Catégories d'actions</a>, <a href="#plan-actions">Plan d'actions</a>.</td></tr>
+          <tr><td>Document</td><td><a href="#document">Document unique</a> (consultation, impression, export Excel) et <a href="#versions">Versions archivées</a>.</td></tr>
+          <tr><td>À droite</td><td>Selon vos droits : Administration, Mise à jour, Journal, puis Aide et Déconnexion.</td></tr>
+        </tbody>
+      </table>
+      <p>Sur chaque page, le bouton <span class="badge rounded-pill text-bg-light border">?</span> placé à côté du titre ouvre directement la rubrique d'aide correspondante.</p>
+      <p>Les menus et boutons affichés dépendent de vos <a href="#droits">droits</a> : un utilisateur en lecture seule ne voit ni les boutons « Ajouter », ni « Modifier », ni « Supprimer ».</p>
+      <h4>Démarche conseillée pour un premier DUERP</h4>
+      <ol>
+        <li>Vérifiez les <a href="#categories-risques">catégories de risques</a> proposées (une liste standard est fournie) et complétez-les si besoin.</li>
+        <li>Créez les <a href="#unites">unités de travail</a> avec leur effectif.</li>
+        <li>Saisissez les <a href="#risques">risques</a> de chaque unité, avec les mesures déjà en place, et cotez-les.</li>
+        <li>Ajoutez les <a href="#plan-actions">actions de prévention</a>, en commençant par les risques critiques.</li>
+        <li>Renseignez les <a href="#parametres-document">paramètres du document</a> (texte d'introduction, logo).</li>
+        <li>Relisez le <a href="#document">document unique</a>, puis <a href="#versions">archivez une version</a>.</li>
+      </ol>
+    </section>
+
+    {# ================================================================ #}
+    <section id="vue-ensemble">
+      <h3>Vue d'ensemble</h3>
+      <p>La page d'accueil résume l'état du DUERP. Trois chiffres clés figurent en haut : le nombre d'unités de travail, de risques évalués et de risques critiques. Des alertes s'affichent au-dessus si aucune version n'a encore été archivée, ou si la dernière date de plus d'un an.</p>
+      <p>Les cadres suivants se lisent de haut en bas. La plupart contiennent des liens qui ouvrent la liste correspondante, déjà filtrée.</p>
+      <dl class="row">
+        <dt class="col-sm-4">Matrice gravité × fréquence</dt>
+        <dd class="col-sm-8">Nombre de risques par case. La couleur est celle du niveau le plus élevé de la case (la maîtrise entre aussi dans la cotation, une case peut donc réunir plusieurs niveaux). Un clic sur une case affiche ces risques.</dd>
+        <dt class="col-sm-4">Points de vigilance</dt>
+        <dd class="col-sm-8">Risques moyens ou critiques qui n'ont aucune action de prévention à faire ou en cours. Ce sont les priorités à traiter.</dd>
+        <dt class="col-sm-4">Répartition des risques par niveau</dt>
+        <dd class="col-sm-8">Part des risques faibles, moyens et critiques.</dd>
+        <dt class="col-sm-4">Actions à suivre</dt>
+        <dd class="col-sm-8">Actions en retard (échéance dépassée) et prochaines échéances.</dd>
+        <dt class="col-sm-4">Avancement du plan d'actions</dt>
+        <dd class="col-sm-8">Répartition des actions par statut, pour tout le plan puis par catégorie d'action.</dd>
+        <dt class="col-sm-4">Actions à compléter</dt>
+        <dd class="col-sm-8">Actions non terminées sans échéance, sans responsable, sans catégorie ou sans coût estimé.</dd>
+        <dt class="col-sm-4">Risques les plus critiques</dt>
+        <dd class="col-sm-8">Les cinq cotations les plus élevées.</dd>
+        <dt class="col-sm-4">Répartition par catégorie</dt>
+        <dd class="col-sm-8">Nombre de risques par catégorie de risque.</dd>
+        <dt class="col-sm-4">Unités les plus exposées</dt>
+        <dd class="col-sm-8">Pour chaque unité : risques critiques, moyens et faibles, actions en cours et cotation maximale.</dd>
+        <dt class="col-sm-4">Budget de prévention</dt>
+        <dd class="col-sm-8">Somme des coûts saisis : prévus (actions non terminées) et réalisés (actions terminées), par catégorie d'action.</dd>
+        <dt class="col-sm-4">Mise à jour et réévaluations</dt>
+        <dd class="col-sm-8">Nombre de jours avant l'échéance de la mise à jour annuelle, calculée à partir de la dernière version archivée, et risques à réévaluer après la fin d'une action.</dd>
+      </dl>
+    </section>
+
+    {# ================================================================ #}
+    <section id="listes">
+      <h3>Travailler avec les listes</h3>
+      <p>Les pages Unités, Catégories, Risques, Plan d'actions, Versions et Journal présentent leurs données dans des tableaux qui fonctionnent tous de la même façon :</p>
+      <ul>
+        <li><b>Trier</b> : cliquez sur le titre d'une colonne ; un second clic inverse l'ordre.</li>
+        <li><b>Rechercher</b> : la zone « Rechercher » filtre instantanément sur tout le texte du tableau.</li>
+        <li><b>Imprimer</b> : imprime les lignes et colonnes affichées.</li>
+        <li><b>Excel</b> : télécharge les lignes et colonnes affichées, dans l'ordre du tri. Pour un export complet avec formules, utilisez plutôt l'<a href="#document">export du document unique</a>.</li>
+        <li><b>Colonnes</b> : affiche ou masque des colonnes. Dans la liste des risques, Fréquence, Gravité et Maîtrise sont masquées par défaut, la cotation restant visible dans la colonne Niveau.</li>
+        <li><b>Lignes</b> : nombre de lignes par page (25 par défaut), jusqu'à « Tout afficher ».</li>
+      </ul>
+      <p>Le tri et le nombre de lignes choisis sont mémorisés par votre navigateur pour chaque liste.</p>
+      <p>Certaines listes ont en plus des <b>listes déroulantes de filtre</b> au-dessus du tableau (par exemple Unité, Catégorie et Niveau pour les risques). Le chiffre entre parenthèses indique combien de lignes correspondent à chaque choix, compte tenu des autres filtres. Une liste déroulante active apparaît en gras.</p>
+      <p>Quand vous arrivez depuis un lien du tableau de bord, un bouton sombre rappelle le filtre appliqué ; cliquez sur ✕ pour le retirer.</p>
+      <p>Dans les formulaires d'ajout, le bouton <b>Enregistrer et ajouter</b> enregistre la fiche et rouvre aussitôt un formulaire vide, pratique pour une saisie en série.</p>
+    </section>
+
+    {# ================================================================ #}
+    <section id="unites">
+      <h3>Unités de travail</h3>
+      <p><span class="chemin">Évaluation › Unités de travail</span></p>
+      <p>Une unité de travail regroupe des agents exposés à des risques de même nature : un service (services techniques, restauration scolaire), un métier (agents d'entretien) ou un lieu (école, médiathèque). Le découpage est libre ; il doit rester assez fin pour que les risques soient précis, sans multiplier les unités identiques.</p>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th style="width:25%">Champ</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td>Structure</td><td><a href="#structures">Structure</a> à laquelle l'unité appartient. Choisissez « Toutes les structures » (ou laissez vide s'il n'y a pas de structure) pour la rendre visible de tous.</td></tr>
+          <tr><td>Nom</td><td>Nom de l'unité, repris en titre dans le document unique.</td></tr>
+          <tr><td>Description</td><td>Activités, lieux, horaires particuliers… Affichée sous le titre de l'unité dans le document.</td></tr>
+          <tr><td>Effectif</td><td>Nombre d'agents concernés.</td></tr>
+        </tbody>
+      </table>
+      <div class="alert alert-warning small">Supprimer une unité supprime aussi tous ses risques, leurs pièces jointes et les actions qui ne concernent que ces risques. La page de confirmation liste ce qui sera supprimé. Les actions communes à d'autres unités sont conservées.</div>
+    </section>
+
+    {# ================================================================ #}
+    <section id="categories-risques">
+      <h3>Catégories de risques</h3>
+      <p><span class="chemin">Évaluation › Catégories de risques</span></p>
+      <p>Les catégories classent les risques par nature : chutes et manutentions, postures et TMS, produits chimiques, risques psychosociaux… Une liste standard est fournie à l'installation ; vous pouvez la modifier.</p>
+      <ul>
+        <li><b>Nom</b> : unique.</li>
+        <li><b>Description</b> : facultative, elle aide les rédacteurs à choisir la bonne catégorie.</li>
+        <li><b>Ordre d'affichage</b> : les catégories sont classées par ordre croissant, puis par nom, dans les listes et les filtres.</li>
+      </ul>
+      <p>Une catégorie utilisée par au moins un risque ne peut pas être supprimée : changez d'abord la catégorie de ces risques.</p>
+    </section>
+
+    {# ================================================================ #}
+    <section id="risques">
+      <h3>Risques et cotation</h3>
+      <p><span class="chemin">Évaluation › Risques</span></p>
+      <h4>La fiche d'un risque</h4>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th style="width:25%">Champ</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td>Unité de travail</td><td>Unité exposée au risque.</td></tr>
+          <tr><td>Catégorie</td><td>Nature du risque.</td></tr>
+          <tr><td>Danger</td><td>Ce qui peut causer un dommage, en quelques mots : « Chute de hauteur », « Port de charges lourdes ».</td></tr>
+          <tr><td>Situation de travail</td><td>Dans quelles circonstances les agents y sont exposés : « Nettoyage des gouttières sur échelle ».</td></tr>
+          <tr><td>Fréquence, gravité, maîtrise</td><td>Les trois notes de la cotation (voir ci-dessous).</td></tr>
+          <tr><td>Mesures existantes</td><td>Ce qui est déjà en place : équipements, consignes, formations. Une mesure par ligne ; chaque ligne apparaît avec le macaron « Existante » dans le document.</td></tr>
+          <tr><td>Fichiers</td><td>Photos et documents joints (voir <a href="#pieces-jointes">rubrique dédiée</a>).</td></tr>
+        </tbody>
+      </table>
+      <p>La date de dernière évaluation est mise à jour automatiquement à chaque enregistrement de la fiche.</p>
+
+      <h4>La cotation F × G × M</h4>
+      <p>Chaque risque reçoit trois notes, chacune égale à 1, 4, 7 ou 10. La cotation est leur produit, de 1 à 1 000.</p>
+      <div class="row g-2 mb-2">
+        {% for titre, explication, notes in methode.baremes %}
+          <div class="col-md-4">
+            <table class="table table-sm table-bordered mb-1">
+              <thead><tr><th colspan="2">{{ titre }}<br><small class="fw-normal text-body-secondary">{{ explication }}</small></th></tr></thead>
+              <tbody>{% for n in notes %}<tr><td class="text-center fw-bold" style="width: 3rem">{{ n.note }}</td><td>{{ n.libelle }}</td></tr>{% endfor %}</tbody>
+            </table>
+          </div>
+        {% endfor %}
+      </div>
+      <p>Attention au sens de la <b>maîtrise</b> : une note basse signifie que le risque est bien maîtrisé. Plus les mesures en place sont efficaces, plus la cotation baisse.</p>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th>Niveau</th>{% for code, lib, a, b in methode.niveaux %}<th class="niveau-{{ code }} text-center">{{ lib }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          <tr><td>Cotation</td>{% for code, lib, a, b in methode.niveaux %}<td class="text-center">{{ a }} à {{ b }}</td>{% endfor %}</tr>
+          <tr><td>Priorité</td><td class="text-center">3</td><td class="text-center">2</td><td class="text-center">1 : à traiter en premier</td></tr>
+        </tbody>
+      </table>
+      <p><b>Exemple</b> : une chute de hauteur (gravité 10) lors d'interventions occasionnelles (fréquence 4) avec des mesures insuffisantes (maîtrise 7) donne 4 × 10 × 7 = 280, soit un risque moyen. Si l'on équipe les agents d'une nacelle et qu'on les forme, la maîtrise passe à 1 : 4 × 10 × 1 = 40, risque faible.</p>
+
+      <h4>La liste des risques</h4>
+      <p>Elle est triée par cotation décroissante. Trois listes déroulantes permettent de la filtrer par <b>unité</b>, par <b>catégorie</b> et par <b>niveau</b>, séparément ou ensemble. La colonne « Actions de prévention » résume les actions liées à chaque risque, et « Fichiers » le nombre de pièces jointes.</p>
+    </section>
+
+    {# ================================================================ #}
+    <section id="pieces-jointes">
+      <h3>Photos et documents joints</h3>
+      <p>Depuis la fiche d'un risque, le champ « Ajouter des fichiers » accepte jusqu'à 10 fichiers à la fois, de 15 Mo maximum chacun :</p>
+      <ul>
+        <li><b>images</b> : jpg, png, gif, webp ;</li>
+        <li><b>documents</b> : pdf, doc, docx, xls, xlsx, odt, ods, txt.</li>
+      </ul>
+      <p>Les images s'affichent en vignettes : un clic les agrandit dans une fenêtre, sans quitter la page. Elles sont aussi intégrées au <a href="#document">document unique</a> imprimé, sous le danger concerné. Les documents se téléchargent d'un clic.</p>
+      <p>Les fichiers ne sont accessibles qu'aux utilisateurs connectés qui ont le droit de voir le risque : ils ne peuvent pas être ouverts par un lien direct depuis l'extérieur.</p>
+    </section>
+
+    {# ================================================================ #}
+    <section id="actions-depuis-risque">
+      <h3>Actions depuis la fiche d'un risque</h3>
+      <p>En modification, la fiche d'un risque comporte un cadre « Actions de prévention » qui liste les actions liées à ce risque. Vous pouvez y :</p>
+      <ul>
+        <li><b>Ajouter</b> une action : elle sera propre à ce risque ;</li>
+        <li><b>Rattacher</b> une action existante : utile pour une même action menée dans plusieurs unités (une formation commune, un achat groupé). L'action devient alors <a href="#plan-actions">commune</a> ;</li>
+        <li><b>Modifier</b> une action ;</li>
+        <li><b>Détacher</b> une action commune : elle reste en place pour les autres risques ;</li>
+        <li><b>Supprimer</b> une action propre à ce risque.</li>
+      </ul>
+    </section>
+
+    {# ================================================================ #}
+    <section id="categories-actions">
+      <h3>Catégories d'actions</h3>
+      <p><span class="chemin">Prévention › Catégories d'actions</span></p>
+      <p>Elles classent les actions par type : Formation, Matériel, Organisation, Travaux, Communication, Autre (liste modifiable). Elles servent à filtrer le plan d'actions, à suivre l'avancement et le budget par catégorie sur le tableau de bord, et à présenter les axes du plan dans l'introduction du document unique.</p>
+      <p>Comme pour les catégories de risques, un nom unique, une description facultative et un ordre d'affichage. Une catégorie utilisée par une action ne peut pas être supprimée.</p>
+    </section>
+
+    {# ================================================================ #}
+    <section id="plan-actions">
+      <h3>Plan d'actions</h3>
+      <p><span class="chemin">Prévention › Plan d'actions</span></p>
+      <h4>Trois portées</h4>
+      <dl class="row">
+        <dt class="col-sm-3">Propre à un risque</dt><dd class="col-sm-9">L'action concerne un seul risque d'une unité.</dd>
+        <dt class="col-sm-3">Commune</dt><dd class="col-sm-9">Une seule action liée à plusieurs risques, en général dans plusieurs unités : un seul coût, un seul statut, et elle s'affiche sur la fiche de chaque risque concerné.</dd>
+        <dt class="col-sm-3">Générale</dt><dd class="col-sm-9">L'action ne vise aucun risque particulier et concerne toute la structure (sensibilisation, registre de signalement…). Elle figure dans les « Mesures générales de prévention » du document unique.</dd>
+      </dl>
+      <p>Dans le formulaire, choisissez « Liée à un ou plusieurs risques » puis cochez les risques concernés (un seul : action propre ; plusieurs : action commune), ou « Action générale ». Pour aller vite, la zone de recherche filtre les risques par unité ou danger, et « Cocher tous les risques de la catégorie » coche d'un coup tous les risques d'une catégorie.</p>
+      <h4>Les champs</h4>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th style="width:25%">Champ</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td>Action de prévention</td><td>Ce qui sera fait, de façon concrète.</td></tr>
+          <tr><td>Catégorie</td><td>Type d'action (facultatif).</td></tr>
+          <tr><td>Responsable</td><td>Personne ou service qui pilote l'action, en texte libre. Les noms déjà utilisés sont proposés pendant la saisie.</td></tr>
+          <tr><td>Échéance</td><td>Date prévue. Une fois dépassée, l'action non terminée apparaît « En retard ».</td></tr>
+          <tr><td>Durée, coût</td><td>Estimation de la durée (texte libre) et du coût en euros, repris dans le budget du tableau de bord.</td></tr>
+          <tr><td>Statut</td><td>À faire, En cours ou Terminée.</td></tr>
+          <tr><td>Date de réalisation</td><td>Renseignée automatiquement à la date du jour quand l'action passe à « Terminée » ; modifiable.</td></tr>
+        </tbody>
+      </table>
+      <h4>Quand une action est terminée</h4>
+      <p>Une action terminée devient une <b>mesure existante</b> des risques concernés : elle apparaît avec le macaron « Terminée » dans le document unique et dans l'export Excel. Previthys vous invite alors à <b>réévaluer le risque</b> : si sa gravité, sa fréquence ou surtout sa maîtrise ont changé, ouvrez sa fiche et ajustez les notes. Tant que ce n'est pas fait, le risque figure parmi les risques à réévaluer, dans le cadre « Mise à jour du DUERP et réévaluations » du tableau de bord.</p>
+      <h4>Filtrer le plan</h4>
+      <p>Trois listes déroulantes combinables : <b>Unité</b>, <b>Portée</b> (générales, communes, propres à une unité) et <b>Catégorie</b> (dont « Non classées »). Depuis le cadre « Actions à compléter » du tableau de bord, un filtre supplémentaire n'affiche que les actions sans échéance, sans responsable, sans catégorie ou sans coût.</p>
+    </section>
+
+    {# ================================================================ #}
+    <section id="document">
+      <h3>Document unique</h3>
+      <p><span class="chemin">Document › Document unique (impression)</span></p>
+      <p>Cette page présente le DUERP actuel, tel qu'il sera imprimé :</p>
+      <ol>
+        <li>une <b>page de garde</b> avec le logo, le nom de l'organisation et la date d'édition ;</li>
+        <li>une <b>introduction</b> : votre texte de présentation, la méthode d'évaluation (barèmes et niveaux), un guide de lecture, la liste des unités retenues et les axes du plan d'actions ;</li>
+        <li>les <b>mesures générales de prévention</b>, qui concernent toutes les unités ;</li>
+        <li>pour chaque <b>unité de travail</b>, sous un bandeau à son nom, le tableau de ses risques du plus élevé au plus faible : danger et situation, photos, catégorie, cotation sur fond de couleur, puis les mesures existantes et les actions avec leur macaron de statut.</li>
+      </ol>
+      <p>Les boutons en haut de page permettent :</p>
+      <ul>
+        <li><b>Imprimer / enregistrer en PDF</b> : ouvre l'impression du navigateur. Pour un PDF, choisissez « Enregistrer au format PDF » comme imprimante. Le menu, les boutons et les liens disparaissent à l'impression, et un nom d'unité ne reste jamais seul en bas de page.</li>
+        <li><b>Exporter en Excel</b> : classeur de trois onglets (Synthèse, Risques, Actions) avec les formules de cotation, à retravailler ou à transmettre.</li>
+        <li><b>Paramètres du document</b> : texte d'introduction et logo (voir ci-dessous).</li>
+      </ul>
+      <p>Si vous avez accès à plusieurs structures, le document réunit les données de toutes vos structures.</p>
+    </section>
+
+    {# ================================================================ #}
+    <section id="parametres-document">
+      <h3>Paramètres du document</h3>
+      <p><span class="chemin">Document › Document unique › bouton « Paramètres du document »</span></p>
+      <p>Cette page règle la présentation du document unique :</p>
+      <ul>
+        <li><b>Texte de présentation</b>, affiché au début de l'introduction : la structure, ses missions, la démarche suivie, les personnes associées (représentants du personnel, assistant de prévention…). Mise en forme simple :
+          <ul>
+            <li>une ligne vide sépare deux paragraphes ;</li>
+            <li><code>## Titre</code> en début de ligne crée un titre de partie ;</li>
+            <li><code>-</code> en début de ligne crée une liste à puces.</li>
+          </ul>
+          Un aperçu du texte mis en forme s'affiche à côté du formulaire.</li>
+        <li><b>Logo</b> de la page de garde : image PNG ou JPEG de 500 Ko maximum.</li>
+      </ul>
+      <p>Si plusieurs structures existent, un onglet par structure permet de rédiger une présentation propre à chacune. L'onglet « Par défaut » s'applique aux structures qui n'ont pas la leur.</p>
+      <p>Le texte et le logo sont archivés avec chaque version : les modifier n'altère pas les versions déjà archivées.</p>
+    </section>
+
+    {# ================================================================ #}
+    <section id="versions">
+      <h3>Versions archivées</h3>
+      <p><span class="chemin">Document › Versions archivées</span></p>
+      <p>Archiver une version enregistre une <b>copie figée</b> du DUERP à une date donnée : unités, risques, cotations, mesures, actions, photos, texte d'introduction et logo. Les modifications faites ensuite n'ont aucun effet sur elle.</p>
+      <h4>Archiver</h4>
+      <p>Cliquez sur <b>Archiver une version</b> et indiquez le motif de la mise à jour (obligatoire) : « Mise à jour annuelle 2026 », « Ouverture de la nouvelle cantine », « Suite à l'accident du 12 mars »… Si plusieurs structures existent, choisissez celle à archiver, ou laissez vide pour toutes. Les versions sont numérotées automatiquement.</p>
+      <p>Archivez au moins une fois par an et après chaque changement important : le tableau de bord décompte les jours restants avant l'échéance annuelle.</p>
+      <h4>Consulter</h4>
+      <p>Dans la liste, <b>Consulter</b> affiche la version telle qu'elle était, prête à imprimer, et <b>Excel</b> télécharge son export.</p>
+      <div class="alert alert-info small">Les versions doivent être conservées 40 ans. Seul un super-utilisateur peut en supprimer une, et la suppression est inscrite au journal.</div>
+    </section>
+
+    {# ================================================================ #}
+    <h2 class="partie-aide">Administrer Previthys</h2>
+
+    <section id="droits">
+      <h3>Utilisateurs et droits</h3>
+      <p>Les comptes se gèrent dans <b>Administration</b> (menu de droite, visible des membres du personnel), rubrique « Utilisateurs ». Pour chaque compte : identifiant, mot de passe, nom et prénom (affichés dans le journal), groupe de droits et, le cas échéant, structures.</p>
+      <p>Trois groupes sont fournis :</p>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th>Groupe</th><th class="text-center">Consulter</th><th class="text-center">Ajouter, modifier</th><th class="text-center">Supprimer</th></tr></thead>
+        <tbody>
+          <tr><td>Previthys - lecture</td><td class="text-center">✓</td><td class="text-center">—</td><td class="text-center">—</td></tr>
+          <tr><td>Previthys - rédacteur</td><td class="text-center">✓</td><td class="text-center">✓</td><td class="text-center">—</td></tr>
+          <tr><td>Previthys - administrateur</td><td class="text-center">✓</td><td class="text-center">✓</td><td class="text-center">✓</td></tr>
+        </tbody>
+      </table>
+      <p>Les droits portent sur les unités, catégories, risques, actions, paramètres du document et versions. Tous les groupes peuvent consulter le journal. Deux exceptions volontaires, même pour le groupe administrateur :</p>
+      <ul>
+        <li>les <b>versions archivées</b> ne peuvent être supprimées que par un super-utilisateur ;</li>
+        <li>le <b>journal</b> ne peut être ni modifié ni supprimé, par personne.</li>
+      </ul>
+      <p>Cochez « Statut équipe » pour donner accès à l'Administration, et « Statut super-utilisateur » pour tous les droits : toutes les structures, la mise à jour de l'application et la suppression des versions. Réservez ce statut à une ou deux personnes.</p>
+      <p>Pour débloquer un compte verrouillé après trop d'échecs de connexion, attendez la fin du délai ou supprimez la tentative dans Administration › Axes.</p>
+    </section>
+
+    <section id="structures">
+      <h3>Structures</h3>
+      <p>Une même installation peut servir plusieurs structures : une commune et son CCAS, plusieurs établissements, plusieurs associations. Les structures se créent dans <b>Administration › Structures</b>, où l'on choisit aussi les utilisateurs autorisés.</p>
+      <ul>
+        <li>Un utilisateur ne voit que les données de <b>ses</b> structures, plus celles qui n'ont pas de structure (partagées).</li>
+        <li>Un super-utilisateur voit tout.</li>
+        <li>Les unités, les actions générales, les versions et les paramètres du document peuvent être rattachés à une structure. Les risques suivent leur unité ; les actions liées à des risques suivent ces risques.</li>
+      </ul>
+      <p>Avec une seule structure, ou aucune, rien de tout cela n'apparaît : laissez simplement les champs « Structure » vides.</p>
+    </section>
+
+    <section id="journal">
+      <h3>Journal des modifications</h3>
+      <p><span class="chemin">Journal</span> (menu de droite)</p>
+      <p>Chaque création, modification ou suppression d'une unité, d'une catégorie, d'un risque, d'une pièce jointe, d'une action, des paramètres du document ou d'une version est inscrite automatiquement : date et heure, utilisateur, type d'action, objet concerné et détail des champs modifiés (ancienne et nouvelle valeur).</p>
+      <p>Le journal est consultable mais jamais modifiable ni supprimable, y compris par un super-utilisateur : c'est ce qui en fait une preuve de la tenue du DUERP. Chaque utilisateur n'y voit que les entrées de ses structures. Seules les entrées les plus récentes sont affichées ; la zone de recherche permet de retrouver une opération.</p>
+    </section>
+
+    <section id="mise-a-jour">
+      <h3>Mise à jour de l'application</h3>
+      <p><span class="chemin">Mise à jour</span> (menu de droite, super-utilisateurs uniquement)</p>
+      <p>Quand une nouvelle version de Previthys est publiée, un bandeau l'annonce aux super-utilisateurs sur la vue d'ensemble. La page Mise à jour indique la version installée et, s'il y en a une, la version disponible. Le bouton d'installation :</p>
+      <ol>
+        <li>télécharge la nouvelle version et remplace les fichiers de l'application ;</li>
+        <li>met à jour la base de données (migrations) et les groupes de droits ;</li>
+        <li>régénère les fichiers statiques ;</li>
+        <li>signale au serveur web qu'il doit recharger l'application.</li>
+      </ol>
+      <p>Faites une <b>sauvegarde de la base de données et du dossier <code>media/</code></b> avant chaque mise à jour. Avec gunicorn ou uwsgi, redémarrez ensuite le service ; Apache avec mod_wsgi en mode démon recharge l'application de lui-même.</p>
+      <p>La mise à jour peut aussi se lancer en ligne de commande : <code>python manage.py mettre_a_jour</code>. Elle n'est active que si les adresses de mise à jour sont configurées (voir ci-dessous).</p>
+    </section>
+
+    <section id="installation">
+      <h3>Installation et configuration</h3>
+      <h4>Installer</h4>
+      <p>Previthys est une application Django (Python 3.10 ou plus récent). Depuis le dossier qui contient <code>manage.py</code> :</p>
+<pre class="bloc-code">python3 -m venv venv &amp;&amp; source venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py creer_groupes
+python manage.py createsuperuser
+python manage.py collectstatic
+python manage.py charger_exemple   # facultatif : données d'une mairie fictive</pre>
+      <p><code>charger_exemple</code> ne fait rien si des unités existent déjà. <code>creer_groupes</code> peut être relancée sans risque : elle remet les droits des trois groupes à jour.</p>
+      <h4>Configurer</h4>
+      <p>Les réglages propres à votre serveur se placent dans <code>previthys/settings_production.py</code>, à côté de <code>settings.py</code>. Ce fichier n'est jamais écrasé par la mise à jour et ne doit pas être publié.</p>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th style="width:35%">Réglage</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>SECRET_KEY</code></td><td>Clé secrète longue et aléatoire, <b>à changer impérativement</b>.</td></tr>
+          <tr><td><code>DEBUG</code></td><td><code>False</code> en production.</td></tr>
+          <tr><td><code>ALLOWED_HOSTS</code></td><td>Noms de domaine du site, par exemple <code>["duerp.mairie.fr"]</code>.</td></tr>
+          <tr><td><code>CSRF_TRUSTED_ORIGINS</code></td><td>Adresse complète du site, par exemple <code>["https://duerp.mairie.fr"]</code>.</td></tr>
+          <tr><td><code>DATABASES</code></td><td>Connexion à la base de données (SQLite, MySQL/MariaDB ou PostgreSQL).</td></tr>
+          <tr><td><code>PREVITHYS_ORGANISATION</code></td><td>Nom affiché dans la barre de menu et sur la page de garde.</td></tr>
+          <tr><td><code>ADMIN_URL</code></td><td>Adresse de l'Administration (par défaut <code>administrateur/</code>).</td></tr>
+          <tr><td><code>PREVITHYS_UPDATE_VERSIONS_URL</code><br><code>PREVITHYS_UPDATE_ZIP_URL_TEMPLATE</code></td><td>Adresses de la liste des versions et de l'archive à télécharger (<code>{version}</code> est remplacé par le numéro). Sans elles, la mise à jour en un clic est désactivée.</td></tr>
+        </tbody>
+      </table>
+      <p>Quelques variables d'environnement ajustent la sécurité :</p>
+      <table class="table table-sm table-bordered">
+        <thead><tr><th style="width:35%">Variable</th><th>Rôle</th></tr></thead>
+        <tbody>
+          <tr><td><code>DJANGO_SSL_REDIRECT</code></td><td><code>1</code> (par défaut) : redirige vers HTTPS ; <code>0</code> pour désactiver.</td></tr>
+          <tr><td><code>DJANGO_HSTS_SECONDS</code></td><td>Durée HSTS en secondes (30 jours par défaut).</td></tr>
+          <tr><td><code>DJANGO_BEHIND_PROXY</code></td><td><code>1</code> derrière un proxy qui termine le TLS (nginx, ISPConfig…), seulement si celui-ci réécrit les en-têtes <code>X-Forwarded-*</code>.</td></tr>
+          <tr><td><code>DJANGO_LOGIN_FAILURES</code></td><td>Nombre d'échecs de connexion avant verrouillage (5 par défaut).</td></tr>
+          <tr><td><code>DJANGO_LOGIN_COOLOFF_MINUTES</code></td><td>Durée du verrouillage en minutes (15 par défaut).</td></tr>
+        </tbody>
+      </table>
+      <p>Le serveur web doit servir le dossier <code>static/</code> à l'adresse <code>/static/</code>. Le dossier <code>media/</code>, qui contient les pièces jointes, ne doit <b>pas</b> être publié : Previthys les distribue lui-même après contrôle des droits.</p>
+      <h4>Sauvegarder</h4>
+      <p>Sauvegardez régulièrement la base de données et le dossier <code>media/</code>. Les versions archivées sont dans la base : leur conservation sur 40 ans passe par ces sauvegardes.</p>
+    </section>
+
+    <section id="import">
+      <h3>Import d'un DUERP existant</h3>
+      <p>Un DUERP rédigé dans un autre outil peut être repris grâce à un paquet d'import (<code>.zip</code>) contenant unités, risques, actions, photos et introduction :</p>
+<pre class="bloc-code">python manage.py importer_duerp paquet.zip --simulation   # vérifie et affiche le bilan sans rien enregistrer
+python manage.py importer_duerp paquet.zip --structure "Mairie de …" --utilisateur identifiant</pre>
+      <ul>
+        <li><code>--structure</code> : rattache les unités à cette structure (créée si besoin) ;</li>
+        <li><code>--utilisateur</code> : compte auquel l'import est attribué dans le journal ;</li>
+        <li><code>--forcer</code> : importe même si des unités de même nom existent déjà ;</li>
+        <li><code>--introduction-seulement</code> : ne reprend que le texte d'introduction et le logo.</li>
+      </ul>
+      <p>Commencez toujours par <code>--simulation</code>.</p>
+    </section>
+
+    <section id="securite">
+      <h3>Sécurité</h3>
+      <ul>
+        <li>Toutes les pages exigent une connexion ; les droits sont vérifiés à chaque action, y compris sur les pièces jointes.</li>
+        <li>Verrouillage temporaire après plusieurs échecs de connexion, par identifiant et adresse IP.</li>
+        <li>Sessions limitées à 12 heures, cookies sécurisés en HTTPS, protection contre les requêtes intersites (CSRF).</li>
+        <li>En-têtes de sécurité : politique de contenu (CSP) sans script en ligne, interdiction d'affichage dans un cadre, pages sensibles non mises en cache.</li>
+        <li>Contrôle du contenu réel des fichiers déposés ; format SVG refusé.</li>
+        <li>Export Excel protégé contre l'injection de formules.</li>
+      </ul>
+    </section>
+
+    {# ================================================================ #}
+    <h2 class="partie-aide">Compléments</h2>
+
+    <section id="faq">
+      <h3>Questions fréquentes</h3>
+      <dl>
+        <dt>Je ne vois pas le bouton « Ajouter » ou « Supprimer ».</dt>
+        <dd>Votre compte n'a pas ce droit. Demandez à votre administrateur de vous placer dans le groupe rédacteur ou administrateur.</dd>
+        <dt>Une unité ou un risque que je connais n'apparaît pas.</dt>
+        <dd>Il est sans doute rattaché à une structure à laquelle vous n'avez pas accès. Vérifiez aussi qu'aucun filtre n'est actif au-dessus de la liste, ni dans la zone « Rechercher ».</dd>
+        <dt>J'ai terminé une action, pourquoi la cotation du risque n'a-t-elle pas baissé ?</dt>
+        <dd>La cotation ne change que si vous modifiez les notes. Ouvrez la fiche du risque et ajustez la maîtrise (et, le cas échéant, la gravité ou la fréquence).</dd>
+        <dt>Comment corriger une version archivée ?</dt>
+        <dd>Une version est figée par principe. Corrigez les données actuelles puis archivez une nouvelle version en indiquant le motif.</dd>
+        <dt>Mon compte est verrouillé.</dt>
+        <dd>Patientez le temps indiqué (15 minutes par défaut) ou demandez à un administrateur de le débloquer.</dd>
+      </dl>
+    </section>
+
+    <section id="glossaire">
+      <h3>Glossaire</h3>
+      <dl class="row">
+        <dt class="col-sm-3">DUERP</dt><dd class="col-sm-9">Document unique d'évaluation des risques professionnels.</dd>
+        <dt class="col-sm-3">Unité de travail</dt><dd class="col-sm-9">Groupe d'agents exposés à des risques de même nature.</dd>
+        <dt class="col-sm-3">Danger</dt><dd class="col-sm-9">Ce qui peut causer un dommage (une échelle, un produit, une charge).</dd>
+        <dt class="col-sm-3">Risque</dt><dd class="col-sm-9">Possibilité qu'un agent subisse un dommage en étant exposé à un danger.</dd>
+        <dt class="col-sm-3">Cotation</dt><dd class="col-sm-9">Produit fréquence × gravité × maîtrise, de 1 à 1 000.</dd>
+        <dt class="col-sm-3">Mesure existante</dt><dd class="col-sm-9">Moyen de prévention déjà en place.</dd>
+        <dt class="col-sm-3">Action commune</dt><dd class="col-sm-9">Une même action menée pour plusieurs risques ou unités.</dd>
+        <dt class="col-sm-3">Mesure générale</dt><dd class="col-sm-9">Action qui concerne toute la structure, sans risque particulier.</dd>
+        <dt class="col-sm-3">TMS</dt><dd class="col-sm-9">Troubles musculo-squelettiques.</dd>
+        <dt class="col-sm-3">EPI</dt><dd class="col-sm-9">Équipement de protection individuelle.</dd>
+      </dl>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,7 +1,8 @@
 {% extends "core/base.html" %}
+{% load aide %}
 {% block titre_page %}{{ titre }}{% endblock %}
 {% block contenu %}
-  <h1 class="h4">{{ titre }}</h1>
+  <h1 class="h4">{{ titre }} {% lien_aide %}</h1>
   <div class="card card-body">
     {% if bloquants %}
       <div class="alert alert-danger mb-3">Suppression impossible : « {{ object }} » est utilisé par {{ bloquants|join:", " }}. Modifiez ou supprimez d'abord ces éléments.</div>

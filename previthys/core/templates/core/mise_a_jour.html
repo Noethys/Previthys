@@ -1,8 +1,9 @@
 {% extends "core/base.html" %}
+{% load aide %}
 {% load static %}
 {% block titre_page %}Mise à jour de l'application{% endblock %}
 {% block contenu %}
-  <h1 class="h4">Mise à jour de l'application</h1>
+  <h1 class="h4">Mise à jour de l'application {% lien_aide %}</h1>
   <p class="text-body-secondary">Version actuellement installée : {{ version_actuelle }}</p>
   <div class="card card-body">
     {% if not version_disponible %}

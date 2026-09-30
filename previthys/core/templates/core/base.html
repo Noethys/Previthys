@@ -46,6 +46,7 @@
         {% if user.is_staff %}<li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">Administration</a></li>{% endif %}
       {% if user.is_superuser %}<li class="nav-item"><a class="nav-link" href="{% url 'mise_a_jour' %}">Mise à jour</a></li>{% endif %}
       {% if perms.core.view_journalaudit %}<li class="nav-item"><a class="nav-link" href="{% url 'journal_liste' %}">Journal</a></li>{% endif %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'aide' %}">Aide</a></li>
         <li class="nav-item">
           <form method="post" action="{% url 'logout' %}" class="d-flex">{% csrf_token %}
             <button class="btn btn-link nav-link" type="submit">Déconnexion ({{ user.get_full_name|default:user.get_username }})</button>
