@@ -149,8 +149,11 @@ a.kpi-mini:hover { background: #f8f9fa; }
 
 /* Pages de connexion et de verrouillage : carte centrée sur une matrice de cotation des risques en filigrane. */
 .page-auth { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem; background: #eef1f5; }
-.auth-matrice { position: fixed; inset: 0; z-index: 0; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(5, 1fr); gap: .75rem; padding: .75rem; opacity: .16; pointer-events: none; }
-.auth-matrice i { border-radius: .5rem; }
+.auth-matrice { position: fixed; inset: 0; z-index: 0; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(5, 1fr); gap: .75rem; padding: .75rem; pointer-events: none; }
+.auth-matrice i { border-radius: .5rem; opacity: .16; animation: auth-scintillement 20s ease-in-out infinite; animation-delay: calc(var(--a, 0) * -3s); }
+/* Scintillement lent : chaque case s'éclaire brièvement une fois par cycle, à un moment qui lui est propre.
+   Simple variation d'opacité, sans déplacement : conservé même si le système demande de réduire les animations. */
+@keyframes auth-scintillement { 0%, 85%, 100% { opacity: .16; } 92% { opacity: .45; } }
 .auth-matrice .f, .auth-bandeau .f { background: #28a745; }
 .auth-matrice .m, .auth-bandeau .m { background: #d39e00; }
 .auth-matrice .c, .auth-bandeau .c { background: #dc3545; }

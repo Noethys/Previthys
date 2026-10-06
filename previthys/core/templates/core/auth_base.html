@@ -1,20 +1,20 @@
-{% load static %}<!DOCTYPE html>
+{% load statique %}<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titre_page %}Connexion{% endblock %} - Previthys - {{ PREVITHYS_ORGANISATION }}</title>
-  <link rel="stylesheet" href="{% static 'core/vendor/bootstrap.min.css' %}">
-  <link rel="stylesheet" href="{% static 'core/core.css' %}">
+  <link rel="stylesheet" href="{% static_v 'core/vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static_v 'core/core.css' %}">
 </head>
 <body class="page-auth">
-{# Fond décoratif : matrice de cotation des risques en filigrane (faible, moyen, critique). #}
+{# Fond décoratif : matrice de cotation des risques en filigrane (faible, moyen, critique). --a décale le scintillement de chaque case. #}
 <div class="auth-matrice" aria-hidden="true">
-  <i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i>
-  <i class="f"></i><i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i><i class="c"></i><i class="c"></i><i class="c"></i>
-  <i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i><i class="c"></i><i class="c"></i>
-  <i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i><i class="c"></i>
-  <i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i>
+  <i class="f" style="--a:3.1"></i><i class="f" style="--a:0.4"></i><i class="m" style="--a:5.2"></i><i class="m" style="--a:1.7"></i><i class="c" style="--a:6.3"></i><i class="c" style="--a:2.2"></i><i class="c" style="--a:4.8"></i><i class="c" style="--a:0.9"></i>
+  <i class="f" style="--a:5.9"></i><i class="f" style="--a:2.8"></i><i class="f" style="--a:1.2"></i><i class="m" style="--a:6.7"></i><i class="m" style="--a:3.6"></i><i class="c" style="--a:0.2"></i><i class="c" style="--a:4.1"></i><i class="c" style="--a:5.5"></i>
+  <i class="f" style="--a:1.9"></i><i class="f" style="--a:3.3"></i><i class="f" style="--a:6.1"></i><i class="f" style="--a:0.7"></i><i class="m" style="--a:2.5"></i><i class="m" style="--a:4.4"></i><i class="c" style="--a:5.0"></i><i class="c" style="--a:1.4"></i>
+  <i class="f" style="--a:6.5"></i><i class="f" style="--a:3.9"></i><i class="f" style="--a:0.5"></i><i class="f" style="--a:2.9"></i><i class="f" style="--a:4.6"></i><i class="m" style="--a:1.1"></i><i class="m" style="--a:5.7"></i><i class="c" style="--a:3.0"></i>
+  <i class="f" style="--a:0.8"></i><i class="f" style="--a:6.0"></i><i class="f" style="--a:2.1"></i><i class="f" style="--a:4.9"></i><i class="f" style="--a:1.6"></i><i class="f" style="--a:3.7"></i><i class="m" style="--a:5.3"></i><i class="m" style="--a:0.3"></i>
 </div>
 
 <main class="auth-carte">
