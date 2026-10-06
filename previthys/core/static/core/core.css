@@ -8,17 +8,22 @@
 body { background: #f4f6f9; }
 /* Bootstrap 5 colore les cellules d'un tableau avec --bs-table-bg : on redéfinit cette variable pour les niveaux de risque */
 /* Contrastes conformes au RGAA (critère 3.2, 4,5:1 minimum) : vert foncé sous texte blanc (5,1:1), texte sombre sur
-   jaune (8,7:1), rouge sous texte blanc (4,5:1). */
+   jaune vif, le même que les badges « Moyen » (9,5:1), rouge sous texte blanc (4,5:1). */
 .niveau-faible { --bs-table-bg: #1e7e34; --bs-table-color: #fff; background-color: #1e7e34; color: #fff; font-weight: 600; }
-.niveau-moyen { --bs-table-bg: #d39e00; --bs-table-color: #212529; background-color: #d39e00; color: #212529; font-weight: 600; }
+.niveau-moyen { --bs-table-bg: #ffc107; --bs-table-color: #212529; background-color: #ffc107; color: #212529; font-weight: 600; }
 .niveau-critique { --bs-table-bg: #dc3545; --bs-table-color: #fff; background-color: #dc3545; color: #fff; font-weight: 600; }
 table.matrice td { border: 2px solid #fff; }
 table.dataTable thead th { text-align: center; }
 table.dataTable th[data-name="id"] { width: 25px; }
 table.dataTable th[data-name="actions"] { width: 200px; }
 table.dataTable td { vertical-align: middle; }
-.dt-buttons-haut { margin-top: 10px; }
-.dataTables_filter input { width: 150px !important; margin-right: 10px; }
+.dt-buttons-haut { margin-top: 10px; align-items: center; }
+/* Champ de recherche à la hauteur des boutons voisins (Imprimer, Excel…) : taille normale au lieu de « sm » */
+.dataTables_filter label { margin: 0; }
+.dataTables_filter input.form-control { width: 170px !important; margin: 0 10px 0 0; padding: .375rem .75rem .375rem 2.1rem; font-size: 1rem; line-height: 1.5;
+  border-radius: var(--bs-border-radius);
+  /* Loupe décorative dans le champ (image de fond : rien à restituer aux lecteurs d'écran, le champ a déjà son libellé) */
+  background: var(--bs-body-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236c757d' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='6.8' cy='6.8' r='4.8'/%3E%3Cpath d='M10.4 10.4 14 14'/%3E%3C/svg%3E") no-repeat .7rem center / 1rem 1rem; }
 .dataTables_info { color: #5c636a; font-size: 12px; margin-left: 10px; }
 @media print {
   body { background: #fff; }
@@ -81,7 +86,7 @@ table.matrice-risques td.case { text-align: center; vertical-align: middle; heig
 table.matrice-risques td.case a { color: inherit; text-decoration: none; font-size: 1.05rem; font-weight: 700; display: block; }
 table.matrice-risques td.vide { background: #f1f3f5; }
 .pastille { display: inline-block; min-width: 22px; padding: 0 4px; margin: 0 1px; border-radius: 3px; color: #fff; font-size: .7rem; font-weight: 700; text-align: center; }
-.pastille-critique { background: #dc3545; } .pastille-moyen { background: #d39e00; color: #212529; } .pastille-faible { background: #1e7e34; }
+.pastille-critique { background: #dc3545; } .pastille-moyen { background: #ffc107; color: #212529; } .pastille-faible { background: #1e7e34; }
 td.case .pastille { border: 1px solid rgba(255,255,255,.7); }
 .pile-statuts { display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: #e9ecef; font-size: .72rem; color: #fff; font-weight: 600; }
 .pile-statuts > div { display: flex; align-items: center; justify-content: center; white-space: nowrap; }
@@ -157,7 +162,7 @@ a.kpi-mini:hover { background: #f8f9fa; }
    Simple variation d'opacité, sans déplacement : conservé même si le système demande de réduire les animations. */
 @keyframes auth-scintillement { 0%, 85%, 100% { opacity: .16; } 92% { opacity: .45; } }
 .auth-matrice .f, .auth-bandeau .f { background: #28a745; }
-.auth-matrice .m, .auth-bandeau .m { background: #d39e00; }
+.auth-matrice .m, .auth-bandeau .m { background: #ffc107; }
 .auth-matrice .c, .auth-bandeau .c { background: #dc3545; }
 .auth-carte { position: relative; z-index: 1; width: 100%; max-width: 380px; background: #fff; border: 1px solid var(--bs-border-color); border-radius: .75rem; overflow: hidden; box-shadow: 0 .5rem 1.5rem rgba(33, 37, 41, .08); }
 .auth-bandeau { display: flex; height: 6px; }
@@ -238,3 +243,7 @@ a.kpi-mini:hover { background: #f8f9fa; }
 .liste-actions .ligne-action.est-coupe { cursor: help; }
 .liste-actions .ligne-action.est-coupe .texte-action { text-decoration: underline dotted rgba(33, 37, 41, .45); text-underline-offset: .2em; }
 .tooltip-inner { max-width: 360px; text-align: left; }
+
+/* Texte « jaune » (chiffres à surveiller du tableau de bord) : le jaune vif n'est lisible qu'en fond, pas en texte
+   sur blanc (1,6:1). Ambre foncé de la même famille, contraste 6,3:1. */
+.text-warning { color: #7a5c00 !important; }
