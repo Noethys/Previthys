@@ -1,6 +1,6 @@
 {% extends "core/base.html" %}
 {% load aide %}
-{% load static %}
+{% load statique %}
 {% comment %}Formulaire d'une action du plan d'actions : portée (générale ou liée à des risques) et choix des risques par unité.{% endcomment %}
 {% block titre_page %}{{ titre }}{% endblock %}
 {% block contenu %}
@@ -90,4 +90,4 @@
     </form>
   </div>
 {% endblock %}
-{% block scripts %}<script src="{% static 'core/actions.js' %}"></script>{% endblock %}
+{% block scripts %}<script src="{% static_v 'core/actions.js' %}"></script>{% endblock %}

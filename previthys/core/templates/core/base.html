@@ -1,12 +1,12 @@
-{% load static %}<!DOCTYPE html>
+{% load statique %}<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titre_page %}Previthys{% endblock %} - {{ PREVITHYS_ORGANISATION }}</title>
-  <link rel="stylesheet" href="{% static 'core/vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static_v 'core/vendor/bootstrap.min.css' %}">
   {% block styles %}{% endblock %}
-  <link rel="stylesheet" href="{% static 'core/core.css' %}">
+  <link rel="stylesheet" href="{% static_v 'core/core.css' %}">
 </head>
 <body>
 <nav class="navbar navbar-expand-lg bg-dark d-print-none" data-bs-theme="dark">
@@ -68,9 +68,9 @@
   {% block contenu %}{% endblock %}
 </main>
 
-<script src="{% static 'core/vendor/jquery.min.js' %}"></script>
-<script src="{% static 'core/vendor/bootstrap.bundle.min.js' %}"></script>
-<script src="{% static 'core/app.js' %}"></script>
+<script src="{% static_v 'core/vendor/jquery.min.js' %}"></script>
+<script src="{% static_v 'core/vendor/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static_v 'core/app.js' %}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
