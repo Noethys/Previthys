@@ -146,3 +146,26 @@ a.kpi-mini:hover { background: #f8f9fa; }
   .contenu-aide h3, .contenu-aide h4 { break-after: avoid; }
   .contenu-aide table { break-inside: avoid; }
 }
+
+/* Pages de connexion et de verrouillage : carte centrée sur une matrice de cotation des risques en filigrane. */
+.page-auth { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1rem; background: #eef1f5; }
+.auth-matrice { position: fixed; inset: 0; z-index: 0; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(5, 1fr); gap: .75rem; padding: .75rem; opacity: .16; pointer-events: none; }
+.auth-matrice i { border-radius: .5rem; }
+.auth-matrice .f, .auth-bandeau .f { background: #28a745; }
+.auth-matrice .m, .auth-bandeau .m { background: #d39e00; }
+.auth-matrice .c, .auth-bandeau .c { background: #dc3545; }
+.auth-carte { position: relative; z-index: 1; width: 100%; max-width: 380px; background: #fff; border: 1px solid var(--bs-border-color); border-radius: .75rem; overflow: hidden; box-shadow: 0 .5rem 1.5rem rgba(33, 37, 41, .08); }
+.auth-bandeau { display: flex; height: 6px; }
+.auth-bandeau span { flex: 1; }
+.auth-corps { padding: 1.75rem 1.75rem 2rem; }
+.auth-entete { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.5rem; }
+.auth-logo { flex-shrink: 0; color: #212529; }
+.auth-nom { font-size: 1.25rem; font-weight: 600; line-height: 1.2; color: #212529; }
+.auth-organisation { font-size: .85rem; color: var(--bs-secondary-color); }
+.auth-corps .form-label { font-size: .9rem; color: #495057; margin-bottom: .3rem; }
+.auth-corps .btn { padding-top: .55rem; padding-bottom: .55rem; }
+.auth-pied { position: relative; z-index: 1; margin: 1rem 0 0; padding: .15rem .6rem; border-radius: 1rem; background: rgba(238, 241, 245, .85); font-size: .8rem; color: #6c757d; text-align: center; }
+@media (max-width: 575.98px) {
+  .auth-matrice { gap: .4rem; padding: .4rem; }
+  .auth-corps { padding: 1.5rem 1.25rem 1.75rem; }
+}

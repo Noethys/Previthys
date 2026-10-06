@@ -1,0 +1,40 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titre_page %}Connexion{% endblock %} - Previthys - {{ PREVITHYS_ORGANISATION }}</title>
+  <link rel="stylesheet" href="{% static 'core/vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'core/core.css' %}">
+</head>
+<body class="page-auth">
+{# Fond décoratif : matrice de cotation des risques en filigrane (faible, moyen, critique). #}
+<div class="auth-matrice" aria-hidden="true">
+  <i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i>
+  <i class="f"></i><i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i><i class="c"></i><i class="c"></i><i class="c"></i>
+  <i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i><i class="c"></i><i class="c"></i>
+  <i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i><i class="c"></i>
+  <i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="m"></i><i class="m"></i>
+</div>
+
+<main class="auth-carte">
+  <div class="auth-bandeau" aria-hidden="true"><span class="f"></span><span class="m"></span><span class="c"></span></div>
+  <div class="auth-corps">
+    <div class="auth-entete">
+      <svg class="auth-logo" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>
+      </svg>
+      <div>
+        <div class="auth-nom">Previthys</div>
+        <div class="auth-organisation">{{ PREVITHYS_ORGANISATION }}</div>
+      </div>
+    </div>
+    {% for message in messages %}
+      <div class="alert alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag|default:'info' }}{% endif %} py-2 small" role="alert">{{ message }}</div>
+    {% endfor %}
+    {% block contenu %}{% endblock %}
+  </div>
+</main>
+<p class="auth-pied">Document unique d'évaluation des risques professionnels</p>
+</body>
+</html>
