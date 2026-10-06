@@ -10,6 +10,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.db import DEFAULT_DB_ALIAS
 from django.db.models import ProtectedError
 from django.http import HttpResponseRedirect
+from django.utils.http import urlencode
 from django.urls import reverse
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
@@ -40,6 +41,36 @@ class Liste(AccesDuerp, ListView):
     vide = "Aucune donnée"
     url_ajouter = url_modifier = url_supprimer = None
     libelle_ajouter = "Ajouter"
+    memoriser_filtres = False  # filtres de l'adresse conservés en session (retrouvés après une modification, par exemple)
+
+    PARAMETRE_REINITIALISER = "raz"
+
+    def cle_session_filtres(self):
+        return "filtres_%s" % self.model._meta.model_name
+
+    def get(self, request, *args, **kwargs):
+        """Mémorisation des filtres le temps de la session : une adresse avec filtres les enregistre, une adresse sans
+        filtre (menu, retour après enregistrement) les restaure, ?raz=1 les efface."""
+        if self.memoriser_filtres:
+            cle = self.cle_session_filtres()
+            if self.PARAMETRE_REINITIALISER in request.GET:
+                request.session.pop(cle, None)
+                return HttpResponseRedirect(request.path)
+            if request.GET:
+                valeurs = [(k, v) for k, v in request.GET.items() if v]
+                if valeurs:
+                    request.session[cle] = valeurs
+                else:
+                    request.session.pop(cle, None)
+            elif request.session.get(cle):
+                return HttpResponseRedirect(request.path + "?" + urlencode(request.session[cle]))
+        return super().get(request, *args, **kwargs)
+
+    def url_reinitialiser(self):
+        """Lien « Réinitialiser les filtres », affiché dès qu'un filtre mémorisable est actif."""
+        if self.memoriser_filtres and any(self.request.GET.values()):
+            return self.request.path + "?" + self.PARAMETRE_REINITIALISER + "=1"
+        return None
 
     def get_permission_required(self):
         return ["core.view_%s" % self.model._meta.model_name]
@@ -81,6 +112,7 @@ class Liste(AccesDuerp, ListView):
             # paramètres d'adresse à conserver quand on change une liste déroulante (les autres filtres restent actifs)
             "parametres_conserves": [(k, v) for k, v in self.request.GET.items() if k not in {l["nom"] for l in self.listes_filtres()}],
             "colonne_actions": bool(self.url_modifier or self.url_supprimer),
+            "url_reinitialiser": self.url_reinitialiser(),
         })
         return ctx
 

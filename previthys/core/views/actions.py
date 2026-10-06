@@ -43,6 +43,7 @@ class Liste(crud.Liste):
     description = "Suivez les actions de prévention : générales (toute la structure), communes à plusieurs unités ou propres à un risque."
     colonnes = ["ID", "Unité(s)", "Danger", "Action", "Catégorie", "Responsable", "Échéance", "Durée", "Coût", "Statut"]
     ordre = "6,asc"
+    memoriser_filtres = True
     url_ajouter, url_modifier, url_supprimer = "actions_ajouter", "actions_modifier", "actions_supprimer"
     PORTEES = [("", "Toutes"), ("generales", "Générales"), ("communes", "Communes"), ("unite", "Propres à une unité")]
 
@@ -149,7 +150,7 @@ class Liste(crud.Liste):
         parametres = urlencode([(k, v) for k, v in (("unite", unite), ("portee", self.portee()), ("categorie", self.categorie())) if v])
         return [{"titre": "À compléter", "boutons": [{"libelle": "Actions en cours %s  ✕" % self.MANQUES[self.manque()][0],
                                                       "nombre": len(self.object_list), "actif": True,
-                                                      "url": reverse("actions_liste") + ("?" + parametres if parametres else "")}]}]
+                                                      "url": reverse("actions_liste") + "?" + (parametres or "raz=1")}]}]
 
     @cached_property
     def risques_visibles(self):

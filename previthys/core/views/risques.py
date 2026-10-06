@@ -5,6 +5,7 @@
 
 from django.db.models import Count, F
 from django.urls import reverse
+from django.utils.http import urlencode
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 from django.utils.text import Truncator
@@ -60,6 +61,7 @@ class Liste(crud.Liste):
     colonnes = ["ID", "Unité", "Danger", "Catégorie", "Fréquence", "Gravité", "Maîtrise", "Niveau", "Actions de prévention", "Fichiers"]
     colonnes_masquees = ["Fréquence", "Gravité", "Maîtrise"]   # la cotation reste visible dans la colonne Niveau
     ordre = "7,desc"
+    memoriser_filtres = True
     url_ajouter, url_modifier, url_supprimer = "risques_ajouter", "risques_modifier", "risques_supprimer"
 
     def base(self):
@@ -160,7 +162,8 @@ class Liste(crud.Liste):
             return []
         n = len(self.object_list)
         conserves = [(k, v) for k, v in (("unite", self.unite()), ("categorie", self.categorie()), ("niveau", self.niveau())) if v]
-        url = reverse("risques_liste") + ("?" + "&".join("%s=%s" % kv for kv in conserves) if conserves else "")
+        # sans filtre restant, ?raz=1 efface aussi les filtres mémorisés (sinon ils seraient restaurés)
+        url = reverse("risques_liste") + ("?" + urlencode(conserves) if conserves else "?raz=1")
         return [{"titre": "Filtre", "boutons": [{"libelle": " · ".join(actifs) + "  ✕", "nombre": n, "actif": True, "url": url}]}]
 
     def cellules(self, o):
