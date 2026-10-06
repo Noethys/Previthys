@@ -1,8 +1,12 @@
-<div class="row mb-3">
-  <label class="col-md-3 col-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-  <div class="col-md-7">
-    {{ field }}
-    {% if field.help_text %}<small class="form-text text-body-secondary">{{ field.help_text }}</small>{% endif %}
-    {% for erreur in field.errors %}<div class="text-danger small">{{ erreur }}</div>{% endfor %}
-  </div>
+{% load accessibilite %}<div class="row mb-3">
+  {% if field.field.widget.input_type == "checkbox" %}
+    <div class="col-md-7 offset-md-3"><div class="form-check">{{ field|accessible }} <label class="form-check-label" for="{{ field.id_for_label }}">{% include "core/_libelle.html" %}</label></div>
+      {% include "core/_aide_erreurs.html" %}</div>
+  {% else %}
+    <label class="col-md-3 col-form-label" for="{{ field.id_for_label }}">{% include "core/_libelle.html" %}</label>
+    <div class="col-md-7">
+      {{ field|accessible }}
+      {% include "core/_aide_erreurs.html" %}
+    </div>
+  {% endif %}
 </div>

@@ -23,6 +23,42 @@ if not ADMIN_URL.endswith("/"):
 # Nom affiché en en-tête, dans le document unique et dans les exports
 PREVITHYS_ORGANISATION = "Non renseigné"
 
+# Mentions légales (loi n° 2004-575 pour la confiance dans l'économie numérique, RGPD), affichées sur la page
+# /mentions-legales/. À compléter dans settings_production.py par la structure qui met l'application à disposition :
+#   - editeur : nom de la structure (par défaut PREVITHYS_ORGANISATION), adresse, telephone, courriel, siret
+#   - directeur_publication : ex. "Mme Martin, maire"
+#   - hebergeur, hebergeur_adresse, hebergeur_telephone : prestataire qui héberge le serveur (ou la structure elle-même)
+#   - dpo : contact du délégué à la protection des données (adresse électronique ou postale)
+PREVITHYS_MENTIONS_LEGALES = {
+    "editeur": "",
+    "adresse": "",
+    "telephone": "",
+    "courriel": "",
+    "siret": "",
+    "directeur_publication": "",
+    "hebergeur": "",
+    "hebergeur_adresse": "",
+    "hebergeur_telephone": "",
+    "dpo": "",
+}
+
+# Déclaration d'accessibilité (RGAA 4.1, article 47 de la loi n° 2005-102), affichée sur la page /accessibilite/ et
+# mentionnée en pied de page. À compléter dans settings_production.py par la structure qui met l'application à
+# disposition de ses agents, d'après les résultats de SON audit :
+#   - etat : "non", "partiellement" ou "totalement" (conforme). Sans audit réalisé, la loi impose « non conforme ».
+#   - audit_en_cours : True ajoute « (audit en cours) » à la mention « non conforme » ; False la retire.
+#   - taux : taux de conformité de l'audit (ex. "82 %"), date_audit, auditeur, date_declaration
+#   - contact : adresse électronique ou adresse d'un formulaire pour signaler un défaut d'accessibilité
+PREVITHYS_ACCESSIBILITE = {
+    "etat": "non",
+    "audit_en_cours": True,
+    "taux": "",
+    "date_audit": "",
+    "auditeur": "",
+    "date_declaration": "",
+    "contact": "",
+}
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

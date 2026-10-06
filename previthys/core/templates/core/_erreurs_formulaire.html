@@ -1,0 +1,12 @@
+{% comment %}Récapitulatif des erreurs en haut d'un formulaire (RGAA 11.10, 11.11) : chaque erreur renvoie au champ
+concerné. Le bloc reçoit le focus au chargement (core/app.js) pour être annoncé par les lecteurs d'écran.{% endcomment %}
+{% if form.errors %}
+  <div class="alert alert-danger recapitulatif-erreurs" role="alert" tabindex="-1" id="erreurs-formulaire">
+    <h2 class="h6 mb-1">Le formulaire n'a pas été enregistré : {% if form.errors|length > 1 %}{{ form.errors|length }} erreurs à corriger{% else %}une erreur à corriger{% endif %}.</h2>
+    <ul class="mb-0">
+      {% for erreur in form.non_field_errors %}<li>{{ erreur }}</li>{% endfor %}
+      {% for field in form %}{% for erreur in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}</a> : {{ erreur }}</li>{% endfor %}{% endfor %}
+      {% for field in form.hidden_fields %}{% for erreur in field.errors %}<li>{{ erreur }}</li>{% endfor %}{% endfor %}
+    </ul>
+  </div>
+{% endif %}

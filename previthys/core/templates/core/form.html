@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load aide %}
+{% load aide accessibilite %}
 {% block titre_page %}{{ titre }}{% endblock %}
 {% block contenu %}
   <h1 class="h4">{{ titre }} {% lien_aide %}</h1>
@@ -7,17 +7,9 @@
   <div class="card card-body">
     <form method="post" novalidate{% if form.is_multipart %} enctype="multipart/form-data"{% endif %}>
       {% csrf_token %}
-      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
-      {% for field in form %}
-        <div class="row mb-3">
-          <label class="col-md-3 col-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-          <div class="col-md-7">
-            {{ field }}
-            {% if field.help_text %}<small class="form-text text-body-secondary">{{ field.help_text }}</small>{% endif %}
-            {% for erreur in field.errors %}<div class="text-danger small">{{ erreur }}</div>{% endfor %}
-          </div>
-        </div>
-      {% endfor %}
+      {% include "core/_erreurs_formulaire.html" %}
+      {% include "core/_mention_obligatoire.html" %}
+      {% for field in form %}{% include "core/_champ_ligne.html" %}{% endfor %}
       <div class="row"><div class="col-md-7 offset-md-3">
         <button type="submit" class="btn btn-primary">Enregistrer</button>
         {% if avec_ajouter %}<button type="submit" name="enregistrer_ajouter" value="1" class="btn btn-outline-primary">Enregistrer et ajouter</button>{% endif %}
@@ -39,22 +31,22 @@
                   </button>
                 {% endif %}
                 <span>
-                  <a href="{% url 'pieces_jointes_telecharger' piece.pk %}"{% if not piece.est_image %} target="_blank" rel="noopener"{% endif %}>{{ piece.nom_original }}</a><br>
+                  <a href="{% url 'pieces_jointes_telecharger' piece.pk %}"{% if not piece.est_image %} target="_blank" rel="noopener"{% endif %}>{{ piece.nom_original }}{% if not piece.est_image %}<span class="visually-hidden"> (nouvelle fenêtre)</span>{% endif %}</a><br>
                   <small class="text-body-secondary">{{ piece.taille|filesizeformat }}, ajouté le {{ piece.ajoute_le|date:"d/m/Y" }}{% if piece.ajoute_par %} par {{ piece.ajoute_par.get_full_name|default:piece.ajoute_par.get_username }}{% endif %}</small>
                 </span>
               </span>
               <form method="post" action="{% url 'pieces_jointes_supprimer' piece.pk %}" class="mb-0" data-confirmer="Supprimer ce fichier ?">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer{% texte_masque piece.nom_original %}</button>
               </form>
             </li>
           {% endfor %}
         </ul>
-        <div class="modal fade" id="pj-apercu" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="pj-apercu" tabindex="-1" aria-labelledby="pj-apercu-titre" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
               <div class="modal-header">
-                <h2 class="modal-title h6 mb-0"></h2>
+                <h2 class="modal-title h6 mb-0" id="pj-apercu-titre">Aperçu</h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
               </div>
               <div class="modal-body text-center">

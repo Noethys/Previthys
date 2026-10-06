@@ -392,7 +392,7 @@
       <h3>Installation et configuration</h3>
       <h4>Installer</h4>
       <p>Previthys est une application Django (Python 3.10 ou plus récent). Depuis le dossier qui contient <code>manage.py</code> :</p>
-<pre class="bloc-code">python3 -m venv venv &amp;&amp; source venv/bin/activate
+<pre class="bloc-code" tabindex="0">python3 -m venv venv &amp;&amp; source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py creer_groupes
@@ -411,6 +411,8 @@ python manage.py charger_exemple   # facultatif : données d'une mairie fictive<
           <tr><td><code>CSRF_TRUSTED_ORIGINS</code></td><td>Adresse complète du site, par exemple <code>["https://duerp.mairie.fr"]</code>.</td></tr>
           <tr><td><code>DATABASES</code></td><td>Connexion à la base de données (SQLite, MySQL/MariaDB ou PostgreSQL).</td></tr>
           <tr><td><code>PREVITHYS_ORGANISATION</code></td><td>Nom affiché dans la barre de menu et sur la page de garde.</td></tr>
+          <tr><td><code>PREVITHYS_MENTIONS_LEGALES</code></td><td>Contenu des <a href="{% url 'mentions_legales' %}">mentions légales</a> : adresse et directeur de la publication de la structure, hébergeur, contact du délégué à la protection des données.</td></tr>
+          <tr><td><code>PREVITHYS_ACCESSIBILITE</code></td><td>Contenu de la <a href="{% url 'accessibilite' %}">déclaration d'accessibilité</a> : état de conformité (<code>"non"</code>, <code>"partiellement"</code> ou <code>"totalement"</code>), taux et date de l'audit, contact. Sans audit réalisé, l'état doit rester « non conforme » ; <code>"audit_en_cours": True</code> (par défaut) y ajoute « (audit en cours) ».</td></tr>
           <tr><td><code>ADMIN_URL</code></td><td>Adresse de l'Administration (par défaut <code>administrateur/</code>).</td></tr>
           <tr><td><code>PREVITHYS_UPDATE_VERSIONS_URL</code><br><code>PREVITHYS_UPDATE_ZIP_URL_TEMPLATE</code></td><td>Adresses de la liste des versions et de l'archive à télécharger (<code>{version}</code> est remplacé par le numéro). Sans elles, la mise à jour en un clic est désactivée.</td></tr>
         </tbody>
@@ -434,7 +436,7 @@ python manage.py charger_exemple   # facultatif : données d'une mairie fictive<
     <section id="import">
       <h3>Import d'un DUERP existant</h3>
       <p>Un DUERP rédigé dans un autre outil peut être repris grâce à un paquet d'import (<code>.zip</code>) contenant unités, risques, actions, photos et introduction :</p>
-<pre class="bloc-code">python manage.py importer_duerp paquet.zip --simulation   # vérifie et affiche le bilan sans rien enregistrer
+<pre class="bloc-code" tabindex="0">python manage.py importer_duerp paquet.zip --simulation   # vérifie et affiche le bilan sans rien enregistrer
 python manage.py importer_duerp paquet.zip --structure "Mairie de …" --utilisateur identifiant</pre>
       <ul>
         <li><code>--structure</code> : rattache les unités à cette structure (créée si besoin) ;</li>

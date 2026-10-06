@@ -10,8 +10,8 @@
   </div>
 
   {% if nouvelle_version %}
-    <div class="alert alert-warning alert-dismissible fade show">
-      La version {{ nouvelle_version }} de l'application est disponible. <a href="{% url 'mise_a_jour' %}" class="alert-link">Cliquez ici pour l'installer</a>.
+    <div class="alert alert-warning alert-dismissible fade show" role="status">
+      La version {{ nouvelle_version }} de l'application est disponible. <a href="{% url 'mise_a_jour' %}" class="alert-link">Installer la version {{ nouvelle_version }}</a>.
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
     </div>
   {% endif %}
@@ -32,23 +32,24 @@
       <div class="card h-100"><div class="card-body">
         <h2 class="h6">Matrice gravité × fréquence</h2>
         <p class="small text-body-secondary mb-2">Nombre de risques par case. La maîtrise entre aussi dans la cotation : une case peut réunir plusieurs niveaux (détail sous le nombre).</p>
-        <table class="table table-borderless matrice-risques mb-1">
+        <table class="table table-borderless matrice-risques mb-1" aria-describedby="matrice-legende">
+          <caption class="visually-hidden">Nombre de risques par gravité (lignes) et par fréquence (colonnes)</caption>
           <tbody>
             {% for ligne in matrice.lignes %}
               <tr>
-                <th class="text-end">{{ ligne.gravite }}<br><small class="text-body-secondary">{{ ligne.libelle }}</small></th>
+                <th scope="row" class="text-end"><span class="visually-hidden">Gravité </span>{{ ligne.gravite }}<br><small class="text-body-secondary">{{ ligne.libelle }}</small></th>
                 {% for c in ligne.cases %}
                   <td class="case {% if c.pire %}niveau-{{ c.pire }}{% else %}vide{% endif %}">
-                    {% if c.total %}<a href="{% url 'risques_liste' %}?gravite={{ c.gravite }}&amp;frequence={{ c.frequence }}" title="Voir ces {{ c.total }} risques">{{ c.total }}
-                      {% if c.detail|length > 1 %}<small class="d-block">{% for n, nb in c.detail %}<span class="pastille pastille-{{ n }}">{{ nb }}</span>{% endfor %}</small>{% endif %}</a>{% endif %}
+                    {% if c.total %}<a href="{% url 'risques_liste' %}?gravite={{ c.gravite }}&amp;frequence={{ c.frequence }}" title="Voir ces {{ c.total }} risques">{{ c.total }}<span class="visually-hidden"> risque{{ c.total|pluralize }}, niveau le plus élevé : {{ c.pire }}{% if c.detail|length > 1 %} ({% for n, nb in c.detail %}{{ nb }} {{ n }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}</span>
+                      {% if c.detail|length > 1 %}<small class="d-block" aria-hidden="true">{% for n, nb in c.detail %}<span class="pastille pastille-{{ n }}" title="{{ n|capfirst }}">{{ nb }}</span>{% endfor %}</small>{% endif %}</a>{% else %}<span class="visually-hidden">aucun risque</span>{% endif %}
                   </td>
                 {% endfor %}
               </tr>
             {% endfor %}
-            <tr><th></th>{% for f, lib in matrice.frequences %}<th class="text-center">{{ f }}<br><small class="text-body-secondary">{{ lib }}</small></th>{% endfor %}</tr>
+            <tr><td></td>{% for f, lib in matrice.frequences %}<th scope="col" class="text-center"><span class="visually-hidden">Fréquence </span>{{ f }}<br><small class="text-body-secondary">{{ lib }}</small></th>{% endfor %}</tr>
           </tbody>
         </table>
-        <div class="small text-center text-body-secondary">↑ Gravité · Fréquence → · couleur : niveau le plus élevé de la case · clic : liste des risques</div>
+        <div class="small text-center text-body-secondary" id="matrice-legende"><span aria-hidden="true">↑</span> Gravité · Fréquence <span aria-hidden="true">→</span> · couleur : niveau le plus élevé de la case · clic : liste des risques</div>
       </div></div>
     </div>
     <div class="col-lg-6 mb-3">
@@ -58,9 +59,11 @@
         {% if nbre_vigilance %}
           <div class="alert alert-warning py-2 small mb-2"><b>{{ nbre_vigilance }} risque{{ nbre_vigilance|pluralize }} moyen{{ nbre_vigilance|pluralize }} ou critique{{ nbre_vigilance|pluralize }}</b> sans action en cours.</div>
           <table class="table table-sm mb-2">
+            <caption class="visually-hidden">Risques sans action en cours</caption>
+            <thead class="visually-hidden"><tr><th scope="col">Risque et unité</th><th scope="col">Niveau</th></tr></thead>
             {% for r in vigilance %}
               <tr><td>{% if perms.core.change_risque %}<a href="{% url 'risques_modifier' r.pk %}#actions">{{ r.danger|truncatechars:60 }}</a>{% else %}{{ r.danger|truncatechars:60 }}{% endif %}<br><small class="text-body-secondary">{{ r.unite.nom }}</small></td>
-                  <td class="text-end"><span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% else %}warning{% endif %}">{{ r.niveau|capfirst }} ({{ r.cotation }})</span></td></tr>
+                  <td class="text-end"><span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% else %}warning{% endif %}"><span class="visually-hidden">Niveau </span>{{ r.niveau|capfirst }} ({{ r.cotation }})</span></td></tr>
             {% endfor %}
           </table>
           <a class="small" href="{% url 'risques_liste' %}?filtre=vigilance">Voir les {{ nbre_vigilance }} risques →</a>
@@ -77,7 +80,7 @@
         <h2 class="h6">Répartition des risques par niveau</h2>
         {% for n in repartition %}
           <div class="d-flex justify-content-between small mb-1"><span>{{ n.libelle }}</span><span>{{ n.n }}</span></div>
-          <div class="progress mb-2" role="progressbar" aria-label="{{ n.libelle }}" aria-valuenow="{{ n.pourcentage }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress mb-2" role="progressbar" aria-label="{{ n.libelle }} : {{ n.n }} risque{{ n.n|pluralize }}" aria-valuetext="{{ n.pourcentage }} %" aria-valuenow="{{ n.pourcentage }}" aria-valuemin="0" aria-valuemax="100">
             <div class="progress-bar niveau-{{ n.code }}" style="width: {{ n.pourcentage }}%">{% if n.n %}{{ n.pourcentage }}%{% endif %}</div>
           </div>
         {% endfor %}
@@ -88,6 +91,8 @@
       <div class="card h-100"><div class="card-body">
         <h2 class="h6">Actions à suivre</h2>
         <table class="table table-sm">
+          <caption class="visually-hidden">Actions en retard et à venir</caption>
+          <thead class="visually-hidden"><tr><th scope="col">Action et unités</th><th scope="col">Statut</th><th scope="col">Échéance</th></tr></thead>
           {% for a in actions_en_retard %}
             <tr><td>{{ a.description|truncatechars:70 }}<br><small class="text-body-secondary">{{ a.resume_unites }}</small></td><td><span class="badge text-bg-danger">En retard</span></td><td>{{ a.echeance|date:"d/m/Y" }}</td></tr>
           {% endfor %}
@@ -130,7 +135,7 @@
             {% for m in a_completer.manques %}
               <div class="col-6"><a class="kpi-mini d-block text-reset text-decoration-none" href="{% url 'actions_liste' %}?manque={{ m.code }}">
                 <div class="valeur {% if m.n %}text-{{ m.couleur }}{% else %}text-success{% endif %}">{{ m.n }}</div><div class="small">{{ m.libelle }}</div>
-                <div class="progress mt-1" style="height: 5px"><div class="progress-bar bg-{{ m.couleur }}" style="width: {{ m.pourcentage }}%"></div></div>
+                <div class="progress mt-1" style="height: 5px" aria-hidden="true"><div class="progress-bar bg-{{ m.couleur }}" style="width: {{ m.pourcentage }}%"></div></div>
               </a></div>
             {% endfor %}
           </div>
@@ -146,13 +151,15 @@
       <div class="card h-100"><div class="card-body">
         <h2 class="h6">Risques les plus critiques</h2>
         <table class="table table-sm mb-0">
+          <caption class="visually-hidden">Risques les plus critiques</caption>
+          <thead class="visually-hidden"><tr><th scope="col">Risque et unité</th><th scope="col">Niveau</th></tr></thead>
           {% for r in top_risques %}
             <tr>
               <td>
                 {% if perms.core.change_risque %}<a href="{% url 'risques_modifier' r.pk %}">{{ r.danger|truncatechars:60 }}</a>{% else %}{{ r.danger|truncatechars:60 }}{% endif %}
                 <br><small class="text-body-secondary">{{ r.unite.nom }}</small>
               </td>
-              <td class="text-end"><span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% elif r.niveau == 'moyen' %}warning{% else %}success{% endif %}">{{ r.niveau|capfirst }} ({{ r.cotation }})</span></td>
+              <td class="text-end"><span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% elif r.niveau == 'moyen' %}warning{% else %}success{% endif %}"><span class="visually-hidden">Niveau </span>{{ r.niveau|capfirst }} ({{ r.cotation }})</span></td>
             </tr>
           {% empty %}
             <tr><td class="text-body-secondary">Aucun risque saisi.</td></tr>
@@ -165,7 +172,7 @@
         <h2 class="h6">Répartition par catégorie de risque</h2>
         {% for c in repartition_categories %}
           <div class="d-flex justify-content-between small mb-1"><span>{{ c.libelle }}</span><span>{{ c.n }}</span></div>
-          <div class="progress mb-2" role="progressbar" aria-label="{{ c.libelle }}" aria-valuenow="{{ c.pourcentage }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress mb-2" role="progressbar" aria-label="{{ c.libelle }} : {{ c.n }} risque{{ c.n|pluralize }}" aria-valuetext="{{ c.pourcentage }} %" aria-valuenow="{{ c.pourcentage }}" aria-valuemin="0" aria-valuemax="100">
             <div class="progress-bar bg-secondary" style="width: {{ c.pourcentage }}%">{% if c.n %}{{ c.pourcentage }}%{% endif %}</div>
           </div>
         {% empty %}
@@ -180,13 +187,14 @@
       <div class="card h-100"><div class="card-body">
         <h2 class="h6">Unités de travail les plus exposées</h2>
         <table class="table table-sm align-middle mb-1">
-          <thead><tr><th>Unité</th><th>Risques <small class="text-body-secondary">crit. / moy. / faib.</small></th><th class="text-center">Actions en cours</th><th class="text-end">Cotation max</th></tr></thead>
+          <caption class="visually-hidden">Unités de travail les plus exposées</caption>
+          <thead><tr><th scope="col">Unité</th><th scope="col">Risques <small class="text-body-secondary"><abbr title="critiques">crit.</abbr> / <abbr title="moyens">moy.</abbr> / <abbr title="faibles">faib.</abbr></small></th><th scope="col" class="text-center">Actions en cours</th><th scope="col" class="text-end">Cotation max</th></tr></thead>
           <tbody>
             {% for l in tableau_unites.lignes %}
               <tr><td>{{ l.unite.nom }}</td>
-                  <td class="text-nowrap">{% for n, nb in l.niveaux %}<span class="pastille pastille-{{ n }}" title="{{ n }}">{{ nb }}</span>{% endfor %}</td>
+                  <td class="text-nowrap">{% for n, nb in l.niveaux %}<span class="pastille pastille-{{ n }}" title="{{ n|capfirst }}">{{ nb }}<span class="visually-hidden"> {{ n }}{{ nb|pluralize }}</span></span>{% endfor %}</td>
                   <td class="text-center">{{ l.actions }}</td>
-                  <td class="text-end">{% if l.max %}<span class="badge text-bg-{% if l.max >= seuil_critique %}danger{% elif l.max >= seuil_moyen %}warning{% else %}success{% endif %}">{{ l.max }}</span>{% endif %}</td></tr>
+                  <td class="text-end">{% if l.max %}<span class="badge text-bg-{% if l.max >= seuil_critique %}danger{% elif l.max >= seuil_moyen %}warning{% else %}success{% endif %}">{{ l.max }}<span class="visually-hidden"> ({% if l.max >= seuil_critique %}critique{% elif l.max >= seuil_moyen %}moyen{% else %}faible{% endif %})</span></span>{% endif %}</td></tr>
             {% empty %}
               <tr><td class="text-body-secondary">Aucune unité de travail.</td></tr>
             {% endfor %}
@@ -204,7 +212,8 @@
             <div class="col-6"><div class="kpi-mini"><div class="valeur text-success">{{ budget.realise|floatformat:"0g" }} €</div><div class="small">réalisés (actions terminées)</div></div></div>
           </div>
           <table class="table table-sm small mb-1">
-            <thead><tr><th>Catégorie</th><th class="text-end">Prévu</th><th class="text-end">Réalisé</th></tr></thead>
+            <caption class="visually-hidden">Budget par catégorie d'actions</caption>
+            <thead><tr><th scope="col">Catégorie</th><th scope="col" class="text-end">Prévu</th><th scope="col" class="text-end">Réalisé</th></tr></thead>
             <tbody>{% for l in budget.lignes %}<tr><td>{{ l.libelle }}</td><td class="text-end">{% if l.prevu %}{{ l.prevu|floatformat:"0g" }} €{% else %}—{% endif %}</td><td class="text-end">{% if l.realise %}{{ l.realise|floatformat:"0g" }} €{% else %}—{% endif %}</td></tr>{% endfor %}</tbody>
           </table>
           <p class="small text-body-secondary mb-0">Somme des coûts saisis sur {{ budget.nb }} action{{ budget.nb|pluralize }}.</p>
@@ -223,7 +232,7 @@
           <div class="col-lg-5 mb-2">
             {% if mise_a_jour.version %}
               <div class="d-flex gap-3 align-items-center">
-                <div class="compte-a-rebours text-{{ mise_a_jour.couleur }}">{% if mise_a_jour.reste >= 0 %}{{ mise_a_jour.reste }}<small class="d-block">jours</small>{% else %}!{% endif %}</div>
+                <div class="compte-a-rebours text-{{ mise_a_jour.couleur }}" aria-hidden="true">{% if mise_a_jour.reste >= 0 %}{{ mise_a_jour.reste }}<small class="d-block">jours</small>{% else %}!{% endif %}</div>
                 <div class="small">Dernière version archivée : <b>{{ mise_a_jour.version }}</b> du {{ mise_a_jour.date|date:"d/m/Y" }}.<br>
                   {% if mise_a_jour.reste >= 0 %}Prochaine mise à jour annuelle au plus tard le <b>{{ mise_a_jour.echeance|date:"d/m/Y" }}</b>.
                   {% else %}<span class="text-danger">Mise à jour annuelle dépassée de {{ mise_a_jour.retard }} jours.</span>{% endif %}
@@ -231,7 +240,7 @@
               </div>
             {% else %}
               <div class="d-flex gap-3 align-items-center">
-                <div class="compte-a-rebours text-danger">!</div>
+                <div class="compte-a-rebours text-danger" aria-hidden="true">!</div>
                 <div class="small"><b>Aucune version archivée.</b><br>Le DUERP doit être mis à jour au moins une fois par an et à chaque changement important.
                   {% if perms.core.add_versionduerp %}<a href="{% url 'versions_ajouter' %}">Archiver la version actuelle</a>{% endif %}</div>
               </div>
@@ -242,6 +251,8 @@
               <div class="small mb-1"><b>{{ reevaluer|length }} risque{{ reevaluer|length|pluralize }}</b> à réévaluer : une action s'est terminée depuis leur dernière évaluation. Enregistrer la fiche d'un risque vaut réévaluation.</div>
               {% if actions_terminees_recentes %}
                 <table class="table table-sm small mb-1">
+                  <caption class="visually-hidden">Actions terminées récemment</caption>
+                  <thead class="visually-hidden"><tr><th scope="col">Action</th><th scope="col">Date de réalisation</th><th scope="col">Unités</th></tr></thead>
                   {% for a in actions_terminees_recentes %}
                     <tr><td>{{ a.description|truncatechars:70 }}</td><td class="text-nowrap text-body-secondary">le {{ a.date_realisation|date:"d/m/Y" }}</td><td class="text-nowrap">{{ a.resume_unites }}</td></tr>
                   {% endfor %}

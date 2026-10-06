@@ -37,6 +37,7 @@ class Liste(AccesDuerp, ListView):
     description = ""
     colonnes = []          # libellés des colonnes (hors colonne Actions)
     colonnes_masquees = []  # libellés des colonnes masquées par défaut (réaffichables par le bouton « Colonnes »)
+    largeurs_colonnes = {}  # largeur imposée à certaines colonnes, ex. {"Danger": "18%"} (les autres s'adaptent au contenu)
     ordre = "0,asc"        # colonne et sens du tri initial
     vide = "Aucune donnée"
     url_ajouter = url_modifier = url_supprimer = None
@@ -105,13 +106,17 @@ class Liste(AccesDuerp, ListView):
             })
         ctx.update({
             "lignes": lignes, "titre": self.titre, "description": self.description, "colonnes": self.colonnes,
+            "entetes": [{"libelle": c, "largeur": self.largeurs_colonnes.get(c), "masquee": c in self.colonnes_masquees} for c in self.colonnes],
             "colonnes_masquees": self.colonnes_masquees,
             "ordre": self.ordre, "vide": self.vide, "nom_liste": self.model._meta.model_name,
             "url_ajouter": reverse(self.url_ajouter) if self.url_ajouter and _perm(self, "add") else None,
             "libelle_ajouter": self.libelle_ajouter, "filtres": self.filtres(), "listes_filtres": self.listes_filtres(),
             # paramètres d'adresse à conserver quand on change une liste déroulante (les autres filtres restent actifs)
             "parametres_conserves": [(k, v) for k, v in self.request.GET.items() if k not in {l["nom"] for l in self.listes_filtres()}],
-            "colonne_actions": bool(self.url_modifier or self.url_supprimer),
+            # Colonne « Actions » seulement si l'utilisateur a au moins un bouton à y trouver : un lecteur (sans droit de
+            # modification ni de suppression) ne la voit pas, sauf actions supplémentaires (ex. « Consulter » une version)
+            "colonne_actions": any(l["modifier"] or l["supprimer"] or l["supplementaires"] for l in lignes)
+                               or (not lignes and bool((self.url_modifier and _perm(self, "change")) or (self.url_supprimer and _perm(self, "delete")))),
             "url_reinitialiser": self.url_reinitialiser(),
         })
         return ctx

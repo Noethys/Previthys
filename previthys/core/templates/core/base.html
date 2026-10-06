@@ -1,4 +1,4 @@
-{% load statique %}<!DOCTYPE html>
+{% load statique accessibilite %}<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
@@ -9,44 +9,52 @@
   <link rel="stylesheet" href="{% static_v 'core/core.css' %}">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg bg-dark d-print-none" data-bs-theme="dark">
+{# Liens d'évitement (RGAA 12.7) : premiers éléments atteints au clavier, visibles dès qu'ils reçoivent le focus. #}
+<nav class="liens-evitement d-print-none" aria-label="Accès rapide">
+  <ul>
+    <li><a href="#contenu">Aller au contenu</a></li>
+    {% if user.is_authenticated %}<li><a href="#menu-principal">Aller au menu</a></li>{% endif %}
+  </ul>
+</nav>
+<header class="d-print-none">
+<nav class="navbar navbar-expand-lg bg-dark" data-bs-theme="dark" aria-label="Menu principal" id="menu-principal" tabindex="-1">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{% url 'dashboard' %}">Previthys <small class="text-secondary">{{ PREVITHYS_ORGANISATION }}</small></a>
+    <a class="navbar-brand" href="{% url 'dashboard' %}">Previthys <small class="organisation-menu">{{ PREVITHYS_ORGANISATION }}</small><span class="visually-hidden"> - vue d'ensemble</span></a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Afficher le menu"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="menu">
       {% if user.is_authenticated %}
       <ul class="navbar-nav mx-auto">
         {% if perms.core.view_risque %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Vue d'ensemble</a></li>
+        <li class="nav-item"><a class="nav-link"{% page_active "dashboard" %} href="{% url 'dashboard' %}">Vue d'ensemble</a></li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Évaluation</a>
-          <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'unites_liste' %}">Unités de travail</a>
-            <a class="dropdown-item" href="{% url 'categories_liste' %}">Catégories de risques</a>
-            <a class="dropdown-item" href="{% url 'risques_liste' %}">Risques</a>
-          </div>
+          <button class="nav-link dropdown-toggle {% rubrique_active 'unites_' 'categories_liste' 'categories_ajouter' 'categories_modifier' 'categories_supprimer' 'risques_' 'pieces_jointes_' %}" type="button" data-bs-toggle="dropdown" aria-expanded="false">Évaluation</button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item"{% page_active 'unites_' %} href="{% url 'unites_liste' %}">Unités de travail</a></li>
+            <li><a class="dropdown-item"{% page_active 'categories_liste' 'categories_ajouter' 'categories_modifier' 'categories_supprimer' %} href="{% url 'categories_liste' %}">Catégories de risques</a></li>
+            <li><a class="dropdown-item"{% page_active 'risques_' 'pieces_jointes_' %} href="{% url 'risques_liste' %}">Risques</a></li>
+          </ul>
         </li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Prévention</a>
-          <div class="dropdown-menu">
-            {% if perms.core.view_categorieaction %}<a class="dropdown-item" href="{% url 'categories_actions_liste' %}">Catégories d'actions</a>{% endif %}
-            <a class="dropdown-item" href="{% url 'actions_liste' %}">Plan d'actions</a>
-          </div>
+          <button class="nav-link dropdown-toggle {% rubrique_active 'categories_actions_' 'actions_' %}" type="button" data-bs-toggle="dropdown" aria-expanded="false">Prévention</button>
+          <ul class="dropdown-menu">
+            {% if perms.core.view_categorieaction %}<li><a class="dropdown-item"{% page_active 'categories_actions_' %} href="{% url 'categories_actions_liste' %}">Catégories d'actions</a></li>{% endif %}
+            <li><a class="dropdown-item"{% page_active 'actions_' %} href="{% url 'actions_liste' %}">Plan d'actions</a></li>
+          </ul>
         </li>
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" role="button" aria-expanded="false">Document</a>
-          <div class="dropdown-menu">
-            <a class="dropdown-item" href="{% url 'document' %}">Document unique (impression)</a>
-            <a class="dropdown-item" href="{% url 'versions_liste' %}">Versions archivées</a>
-          </div>
+          <button class="nav-link dropdown-toggle {% rubrique_active 'document' 'introduction' 'versions_' %}" type="button" data-bs-toggle="dropdown" aria-expanded="false">Document</button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item"{% page_active 'document' 'introduction' %} href="{% url 'document' %}">Document unique (impression)</a></li>
+            <li><a class="dropdown-item"{% page_active 'versions_' %} href="{% url 'versions_liste' %}">Versions archivées</a></li>
+          </ul>
         </li>
         {% endif %}
       </ul>
       <ul class="navbar-nav">
         {% if user.is_staff %}<li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">Administration</a></li>{% endif %}
-      {% if user.is_superuser %}<li class="nav-item"><a class="nav-link" href="{% url 'mise_a_jour' %}">Mise à jour</a></li>{% endif %}
-      {% if perms.core.view_journalaudit %}<li class="nav-item"><a class="nav-link" href="{% url 'journal_liste' %}">Journal</a></li>{% endif %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'aide' %}">Aide</a></li>
+        {% if user.is_superuser %}<li class="nav-item"><a class="nav-link"{% page_active 'mise_a_jour' %} href="{% url 'mise_a_jour' %}">Mise à jour</a></li>{% endif %}
+        {% if perms.core.view_journalaudit %}<li class="nav-item"><a class="nav-link"{% page_active 'journal_' %} href="{% url 'journal_liste' %}">Journal</a></li>{% endif %}
+        <li class="nav-item"><a class="nav-link"{% page_active 'aide' %} href="{% url 'aide' %}">Aide</a></li>
         <li class="nav-item">
           <form method="post" action="{% url 'logout' %}" class="d-flex">{% csrf_token %}
             <button class="btn btn-link nav-link" type="submit">Déconnexion ({{ user.get_full_name|default:user.get_username }})</button>
@@ -57,16 +65,27 @@
     </div>
   </div>
 </nav>
+</header>
 
-<main class="container-fluid py-3">
+<main class="container-fluid py-3" id="contenu" tabindex="-1">
   {% for message in messages %}
-    <div class="alert alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag|default:'info' }}{% endif %} alert-dismissible fade show d-print-none" role="alert">
+    {# Messages restitués automatiquement par les lecteurs d'écran : « alert » pour une erreur, « status » sinon (RGAA 7.5). #}
+    <div class="alert alert-{% if message.level_tag == 'error' %}danger{% else %}{{ message.level_tag|default:'info' }}{% endif %} alert-dismissible fade show d-print-none" role="{% if message.level_tag == 'error' or message.level_tag == 'warning' %}alert{% else %}status{% endif %}">
       {{ message }}
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
     </div>
   {% endfor %}
   {% block contenu %}{% endblock %}
 </main>
+
+<footer class="pied-page d-print-none">
+  <ul>
+    <li>Previthys — {{ PREVITHYS_ORGANISATION }}</li>
+    <li><a href="{% url 'mentions_legales' %}"{% page_active 'mentions_legales' %}>Mentions légales</a></li>
+    <li><a href="{% url 'accessibilite' %}"{% page_active 'accessibilite' %}>Accessibilité : {{ ETAT_ACCESSIBILITE }}</a></li>
+    {% if user.is_authenticated %}<li><a href="{% url 'aide' %}#presentation">Aide</a></li>{% endif %}
+  </ul>
+</footer>
 
 <script src="{% static_v 'core/vendor/jquery.min.js' %}"></script>
 <script src="{% static_v 'core/vendor/bootstrap.bundle.min.js' %}"></script>

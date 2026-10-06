@@ -3,14 +3,14 @@
 {% block contenu %}
   <h1 class="visually-hidden">Connexion</h1>
   <form method="post" novalidate>{% csrf_token %}
-    {% if form.errors %}<div class="alert alert-danger py-2 small" role="alert">Identifiant ou mot de passe incorrect.</div>{% endif %}
+    {% if form.errors %}<div class="alert alert-danger py-2 small" role="alert" id="erreur-connexion">Identifiant ou mot de passe incorrect.</div>{% endif %}
     <div class="mb-3">
       <label class="form-label" for="id_username">Identifiant</label>
-      <input type="text" name="username" id="id_username" class="form-control" value="{{ form.username.value|default:'' }}" autofocus autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      <input type="text" name="username" id="id_username" class="form-control" value="{{ form.username.value|default:'' }}" autofocus autocomplete="username" autocapitalize="none" spellcheck="false" required{% if form.errors %} aria-invalid="true" aria-describedby="erreur-connexion"{% endif %}>
     </div>
     <div class="mb-4">
       <label class="form-label" for="id_password">Mot de passe</label>
-      <input type="password" name="password" id="id_password" class="form-control" autocomplete="current-password" required>
+      <input type="password" name="password" id="id_password" class="form-control" autocomplete="current-password" required{% if form.errors %} aria-invalid="true" aria-describedby="erreur-connexion"{% endif %}>
     </div>
     <input type="hidden" name="next" value="{{ next }}">
     <button type="submit" class="btn btn-dark w-100">Se connecter</button>

@@ -5,7 +5,7 @@
 
 from django.urls import path
 
-from core.views import actions, aide, auth, categories, categories_actions, introduction, dashboard, document, export, journal, mise_a_jour, pieces_jointes, risques, unites, versions
+from core.views import accessibilite, actions, aide, auth, categories, categories_actions, introduction, dashboard, document, export, journal, mentions_legales, mise_a_jour, pieces_jointes, risques, unites, versions
 
 urlpatterns = [
     path("connexion/", auth.Connexion.as_view(), name="login"),
@@ -18,6 +18,8 @@ urlpatterns = [
     path("mise-a-jour/", mise_a_jour.MiseAJour.as_view(), name="mise_a_jour"),
     path("journal/", journal.Liste.as_view(), name="journal_liste"),
     path("aide/", aide.Aide.as_view(), name="aide"),
+    path("accessibilite/", accessibilite.Accessibilite.as_view(), name="accessibilite"),
+    path("mentions-legales/", mentions_legales.MentionsLegales.as_view(), name="mentions_legales"),
 
     path("unites/", unites.Liste.as_view(), name="unites_liste"),
     path("unites/ajouter/", unites.Ajouter.as_view(), name="unites_ajouter"),

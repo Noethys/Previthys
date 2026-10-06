@@ -1,4 +1,5 @@
 {% extends "core/form.html" %}
+{% load accessibilite %}
 {% comment %}Fiche d'un risque : formulaire du risque (core/form.html) + ses actions de prévention, gérées dans des fenêtres modales.{% endcomment %}
 {% block complements %}
 {% if perms.core.view_actionprevention %}
@@ -20,7 +21,8 @@
       {% elif actions_risque %}
         <div class="table-responsive">
           <table class="table table-sm align-middle mb-0">
-            <thead><tr><th>Action</th><th>Responsable</th><th>Échéance</th><th>Durée</th><th class="text-end">Coût</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+            <caption class="visually-hidden">Actions de prévention du risque</caption>
+            <thead><tr><th scope="col">Action</th><th scope="col">Responsable</th><th scope="col">Échéance</th><th scope="col">Durée</th><th scope="col" class="text-end">Coût</th><th scope="col">Statut</th><th scope="col" class="text-end">Actions</th></tr></thead>
             <tbody>
               {% for action, statut, form_action, nb_risques, unites in actions_risque %}
                 <tr>
@@ -28,7 +30,7 @@
                     {% if action.categorie %}<br><span class="badge categorie-action">{{ action.categorie }}</span>{% endif %}
                     {% if action.est_commune %}
                       <br><span class="badge portee-commune">Commune à {{ action.nbre_unites }} unités</span>
-                      <details class="unites-action d-inline"><summary>voir les unités</summary><small class="d-block text-body-secondary">{{ unites|join:", " }}</small></details>
+                      <details class="unites-action d-inline"><summary>voir les unités<span class="visually-hidden"> concernées</span></summary><small class="d-block text-body-secondary">{{ unites|join:", " }}</small></details>
                     {% endif %}
                   </td>
                   <td>{{ action.responsable }}</td>
@@ -38,19 +40,19 @@
                   <td class="text-nowrap">{{ statut }}{% if action.date_realisation %}<br><small class="text-body-secondary">le {{ action.date_realisation|date:"d/m/Y" }}</small>{% endif %}</td>
                   <td class="text-end text-nowrap">
                     {% if perms.core.change_actionprevention %}
-                      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#action-{{ action.pk }}">Modifier</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#action-{{ action.pk }}">Modifier{% texte_masque action.description|truncatechars:80 %}</button>
                     {% endif %}
                     {% if nb_risques > 1 %}
                       {% if perms.core.change_actionprevention %}
                         <form method="post" action="{% url 'risques_actions_supprimer' object.pk action.pk %}" class="d-inline" data-confirmer="Détacher cette action de ce risque ? Elle reste en place pour les autres risques.">
                           {% csrf_token %}
-                          <button type="submit" class="btn btn-sm btn-outline-danger" title="Retire ce risque de l'action, sans la supprimer pour les autres">Détacher</button>
+                          <button type="submit" class="btn btn-sm btn-outline-danger" title="Retire ce risque de l'action, sans la supprimer pour les autres">Détacher{% texte_masque action.description|truncatechars:80 %}</button>
                         </form>
                       {% endif %}
                     {% elif perms.core.delete_actionprevention %}
                       <form method="post" action="{% url 'risques_actions_supprimer' object.pk action.pk %}" class="d-inline" data-confirmer="Supprimer cette action de prévention ?">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer{% texte_masque action.description|truncatechars:80 %}</button>
                       </form>
                     {% endif %}
                   </td>

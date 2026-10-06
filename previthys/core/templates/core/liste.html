@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load aide %}
+{% load aide accessibilite %}
 {% load statique %}
 {% block titre_page %}{{ titre }}{% endblock %}
 {% block styles %}
@@ -16,15 +16,16 @@
   </div>
   <div class="card card-body">
     {% if listes_filtres %}
-      <form method="get" class="d-flex align-items-center flex-wrap gap-2 mb-2">
+      <form method="get" class="d-flex align-items-center flex-wrap gap-2 mb-2" aria-label="Filtres de la liste">
         {% for k, v in parametres_conserves %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
         {% for l in listes_filtres %}
           <label class="small text-body-secondary" for="filtre-{{ l.nom }}">{{ l.libelle }}</label>
-          <select class="form-select form-select-sm w-auto{% if l.valeur %} border-dark fw-semibold{% endif %}" id="filtre-{{ l.nom }}" name="{{ l.nom }}" data-soumettre>
+          <select class="form-select form-select-sm w-auto{% if l.valeur %} border-dark fw-semibold{% endif %}" id="filtre-{{ l.nom }}" name="{{ l.nom }}" data-soumettre aria-describedby="filtres-aide">
             {% for valeur, libelle in l.options %}<option value="{{ valeur }}"{% if valeur == l.valeur %} selected{% endif %}>{{ libelle }}</option>{% endfor %}
           </select>
         {% endfor %}
         <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Filtrer</button></noscript>
+        <span class="visually-hidden" id="filtres-aide">La liste est mise à jour dès qu'une valeur est choisie. Au clavier, choisissez avec les flèches puis validez avec Entrée.</span>
         {% if url_reinitialiser %}<a class="small ms-1" href="{{ url_reinitialiser }}">Réinitialiser les filtres</a>{% endif %}
       </form>
     {% endif %}
@@ -38,10 +39,12 @@
     {% endfor %}
     <table id="dt_{{ nom_liste }}" class="display datatable table table-striped table-bordered" style="width:100%"
            data-liste="{{ nom_liste }}" data-ordre="{{ ordre }}" data-titre="{{ PREVITHYS_ORGANISATION }} - {{ titre }}" data-vide="{{ vide }}">
+      <caption class="visually-hidden">{{ titre }}</caption>
       <thead>
         <tr>
-          {% for c in colonnes %}<th data-name="{{ c|slugify }}"{% if c in colonnes_masquees %} class="masquee-par-defaut"{% endif %}>{{ c }}</th>{% endfor %}
-          {% if colonne_actions %}<th data-name="actions" class="noorder noexport">Actions</th>{% endif %}
+          {# Une largeur indiquée dans le style de l'en-tête est reprise par DataTables pour le calcul des colonnes #}
+          {% for e in entetes %}<th scope="col" data-name="{{ e.libelle|slugify }}"{% if e.masquee %} class="masquee-par-defaut"{% endif %}{% if e.largeur %} style="width: {{ e.largeur }}"{% endif %}>{{ e.libelle }}</th>{% endfor %}
+          {% if colonne_actions %}<th scope="col" data-name="actions" class="noorder noexport">Actions</th>{% endif %}
         </tr>
       </thead>
       <tbody>
@@ -50,9 +53,10 @@
             {% for c in l.cellules %}<td{% if c.ordre is not None %} data-order="{{ c.ordre }}"{% endif %}>{{ c.html }}</td>{% endfor %}
             {% if colonne_actions %}
               <td class="text-nowrap">
-                {% for libelle, url in l.supplementaires %}<a class="btn btn-sm btn-outline-secondary" href="{{ url }}">{{ libelle }}</a>{% endfor %}
-                {% if l.modifier %}<a class="btn btn-sm btn-outline-secondary" href="{{ l.modifier }}">Modifier</a>{% endif %}
-                {% if l.supprimer %}<a class="btn btn-sm btn-outline-danger" href="{{ l.supprimer }}">Supprimer</a>{% endif %}
+                {# Le nom de l'élément complète l'intitulé des liens pour les lecteurs d'écran (RGAA 6.1) #}
+                {% for libelle, url in l.supplementaires %}<a class="btn btn-sm btn-outline-secondary" href="{{ url }}">{{ libelle }}{% texte_masque l.obj|stringformat:"s"|truncatechars:80 %}</a>{% endfor %}
+                {% if l.modifier %}<a class="btn btn-sm btn-outline-secondary" href="{{ l.modifier }}">Modifier{% texte_masque l.obj|stringformat:"s"|truncatechars:80 %}</a>{% endif %}
+                {% if l.supprimer %}<a class="btn btn-sm btn-outline-danger" href="{{ l.supprimer }}">Supprimer{% texte_masque l.obj|stringformat:"s"|truncatechars:80 %}</a>{% endif %}
               </td>
             {% endif %}
           </tr>

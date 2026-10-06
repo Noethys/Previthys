@@ -17,7 +17,7 @@
   <i class="f" style="--a:0.8"></i><i class="f" style="--a:6.0"></i><i class="f" style="--a:2.1"></i><i class="f" style="--a:4.9"></i><i class="f" style="--a:1.6"></i><i class="f" style="--a:3.7"></i><i class="m" style="--a:5.3"></i><i class="m" style="--a:0.3"></i>
 </div>
 
-<main class="auth-carte">
+<main class="auth-carte" id="contenu">
   <div class="auth-bandeau" aria-hidden="true"><span class="f"></span><span class="m"></span><span class="c"></span></div>
   <div class="auth-corps">
     <div class="auth-entete">
@@ -35,6 +35,9 @@
     {% block contenu %}{% endblock %}
   </div>
 </main>
-<p class="auth-pied">Document unique d'évaluation des risques professionnels</p>
+<footer class="auth-pied">
+  <p>Document unique d'évaluation des risques professionnels</p>
+  <p><a href="{% url 'mentions_legales' %}">Mentions légales</a> · <a href="{% url 'accessibilite' %}">Accessibilité : {{ ETAT_ACCESSIBILITE }}</a></p>
+</footer>
 </body>
 </html>

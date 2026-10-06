@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load aide %}
+{% load aide accessibilite %}
 {% load statique %}
 {% comment %}Formulaire d'une action du plan d'actions : portée (générale ou liée à des risques) et choix des risques par unité.{% endcomment %}
 {% block titre_page %}{{ titre }}{% endblock %}
@@ -9,13 +9,15 @@
   <div class="card card-body">
     <form method="post" novalidate id="formulaire-action">
       {% csrf_token %}
-      {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+      {% include "core/_erreurs_formulaire.html" %}
+      {% include "core/_mention_obligatoire.html" %}
 
       {% include "core/_champ_ligne.html" with field=form.description %}
       {% include "core/_champ_ligne.html" with field=form.categorie %}
 
-      <div class="row mb-3">
-        <div class="col-md-3 col-form-label">{{ form.portee.label }}</div>
+      {# Boutons radio regroupés dans un fieldset dont la légende est l'intitulé de la question (RGAA 11.5, 11.6) #}
+      <fieldset class="row mb-3"{% if form.portee.errors %} aria-describedby="{{ form.portee|erreur_id }}"{% endif %}>
+        <legend class="col-md-3 col-form-label pt-0 fs-6">{% include "core/_libelle.html" with field=form.portee %}</legend>
         <div class="col-md-7">
           {% for choix in form.portee %}
             <div class="form-check">
@@ -26,12 +28,12 @@
               </label>
             </div>
           {% endfor %}
-          {% for erreur in form.portee.errors %}<div class="text-danger small">{{ erreur }}</div>{% endfor %}
+          {% include "core/_aide_erreurs.html" with field=form.portee %}
         </div>
-      </div>
+      </fieldset>
 
-      <div class="row mb-3" id="bloc-risques">
-        <div class="col-md-3 col-form-label">{{ form.risques.label }}</div>
+      <fieldset class="row mb-3" id="bloc-risques"{% if form.risques.errors %} aria-describedby="{{ form.risques|erreur_id }}"{% endif %}>
+        <legend class="col-md-3 col-form-label pt-0 fs-6">{{ form.risques.label }}</legend>
         <div class="col-md-7">
           {% with groupes=form.groupes_risques %}
           {% if groupes %}
@@ -41,44 +43,45 @@
               <button class="btn btn-outline-primary" type="button" id="bouton-cocher">Cocher</button>
               <button class="btn btn-outline-secondary" type="button" id="bouton-decocher">Tout décocher</button>
             </div>
-            <input class="form-control form-control-sm mb-2" type="search" id="filtre-risques" placeholder="Filtrer par unité ou danger…" aria-label="Filtrer les risques">
+            <label class="form-label small mb-1" for="filtre-risques">Filtrer par unité ou danger</label>
+            <input class="form-control form-control-sm mb-2" type="search" id="filtre-risques" aria-describedby="compteur-risques">
             <div class="liste-risques">
               {% for unite, risques in groupes %}
-                <div class="groupe" data-unite="{{ unite.nom|lower }}">
-                  <div class="unite">{{ unite.nom }}</div>
+                <fieldset class="groupe" data-unite="{{ unite.nom|lower }}">
+                  <legend class="unite">{{ unite.nom }}</legend>
                   {% for r, coche in risques %}
                     <label data-texte="{{ unite.nom|lower }} {{ r.danger|lower }} {{ r.categorie.nom|lower }}">
                       <input class="form-check-input" type="checkbox" name="{{ form.risques.html_name }}" value="{{ r.pk }}" data-categorie="{{ r.categorie.nom }}" data-unite="{{ unite.pk }}"{% if coche %} checked{% endif %}>
                       {{ r.danger }}
-                      <span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% elif r.niveau == 'moyen' %}warning{% else %}success{% endif %} ms-auto">{{ r.niveau|capfirst }} ({{ r.cotation }})</span>
+                      <span class="badge text-bg-{% if r.niveau == 'critique' %}danger{% elif r.niveau == 'moyen' %}warning{% else %}success{% endif %} ms-auto"><span class="visually-hidden">Niveau </span>{{ r.niveau|capfirst }} ({{ r.cotation }})</span>
                     </label>
                   {% endfor %}
-                </div>
+                </fieldset>
               {% endfor %}
             </div>
-            <small class="form-text text-body-secondary"><b id="compteur-risques"></b>{% if form.risques_caches %} L'action est aussi liée à {{ form.risques_caches|length }} risque{{ form.risques_caches|length|pluralize }} d'autres structures, conservé{{ form.risques_caches|length|pluralize }} tel{{ form.risques_caches|length|pluralize }} quel{{ form.risques_caches|length|pluralize }}.{% endif %}</small>
+            <small class="form-text text-body-secondary"><b id="compteur-risques" aria-live="polite"></b>{% if form.risques_caches %} L'action est aussi liée à {{ form.risques_caches|length }} risque{{ form.risques_caches|length|pluralize }} d'autres structures, conservé{{ form.risques_caches|length|pluralize }} tel{{ form.risques_caches|length|pluralize }} quel{{ form.risques_caches|length|pluralize }}.{% endif %}</small>
           {% else %}
             <p class="text-body-secondary mb-0">Aucun risque saisi pour l'instant.</p>
           {% endif %}
           {% endwith %}
-          {% for erreur in form.risques.errors %}<div class="text-danger small">{{ erreur }}</div>{% endfor %}
+          {% include "core/_aide_erreurs.html" with field=form.risques %}
         </div>
-      </div>
+      </fieldset>
 
       {% if form.structure %}<div id="bloc-structure">{% include "core/_champ_ligne.html" with field=form.structure %}</div>{% endif %}
       {% include "core/_champ_ligne.html" with field=form.responsable %}
       {% include "core/_responsables.html" with noms=form.suggestions_responsables %}
       <div class="row mb-3">
-        <label class="col-md-3 col-form-label" for="{{ form.echeance.id_for_label }}">{{ form.echeance.label }}</label>
-        <div class="col-md-3">{{ form.echeance }}{% for e in form.echeance.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <label class="col-md-1 col-form-label" for="{{ form.duree.id_for_label }}">{{ form.duree.label }}</label>
-        <div class="col-md-3">{{ form.duree }}{% for e in form.duree.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <label class="col-md-3 col-form-label" for="{{ form.echeance.id_for_label }}">{% include "core/_libelle.html" with field=form.echeance %}</label>
+        <div class="col-md-3">{{ form.echeance|accessible }}{% include "core/_aide_erreurs.html" with field=form.echeance %}</div>
+        <label class="col-md-1 col-form-label" for="{{ form.duree.id_for_label }}">{% include "core/_libelle.html" with field=form.duree %}</label>
+        <div class="col-md-3">{{ form.duree|accessible }}{% include "core/_aide_erreurs.html" with field=form.duree %}</div>
       </div>
       <div class="row mb-3">
-        <label class="col-md-3 col-form-label" for="{{ form.cout.id_for_label }}">{{ form.cout.label }}</label>
-        <div class="col-md-3">{{ form.cout }}{% for e in form.cout.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <label class="col-md-1 col-form-label" for="{{ form.statut.id_for_label }}">{{ form.statut.label }}</label>
-        <div class="col-md-3">{{ form.statut }}{% for e in form.statut.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <label class="col-md-3 col-form-label" for="{{ form.cout.id_for_label }}">{% include "core/_libelle.html" with field=form.cout %}</label>
+        <div class="col-md-3">{{ form.cout|accessible }}{% include "core/_aide_erreurs.html" with field=form.cout %}</div>
+        <label class="col-md-1 col-form-label" for="{{ form.statut.id_for_label }}">{% include "core/_libelle.html" with field=form.statut %}</label>
+        <div class="col-md-3">{{ form.statut|accessible }}{% include "core/_aide_erreurs.html" with field=form.statut %}</div>
       </div>
       {% include "core/_champ_ligne.html" with field=form.date_realisation %}
 

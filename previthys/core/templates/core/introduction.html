@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% load aide %}
+{% load aide accessibilite %}
 {% block titre_page %}{{ titre }}{% endblock %}
 {% block contenu %}
   <div class="d-flex justify-content-between align-items-start flex-wrap">
@@ -10,9 +10,9 @@
     <a class="btn btn-outline-secondary mb-2" href="{% url 'document' %}">Voir le document</a>
   </div>
   {% if onglets %}
-    <ul class="nav nav-tabs mb-3">
+    <ul class="nav nav-tabs mb-3" aria-label="Structure concernée">
       {% for s, actif in onglets %}
-        <li class="nav-item"><a class="nav-link{% if actif %} active{% endif %}" href="{% url 'introduction' %}{% if s %}?structure={{ s.pk }}{% endif %}">{% if s %}{{ s }}{% else %}Par défaut (toutes les structures){% endif %}</a></li>
+        <li class="nav-item"><a class="nav-link{% if actif %} active{% endif %}"{% if actif %} aria-current="page"{% endif %} href="{% url 'introduction' %}{% if s %}?structure={{ s.pk }}{% endif %}">{% if s %}{{ s }}{% else %}Par défaut (toutes les structures){% endif %}</a></li>
       {% endfor %}
     </ul>
   {% endif %}
@@ -21,17 +21,17 @@
       <div class="card card-body">
         <form method="post" enctype="multipart/form-data" novalidate>
           {% csrf_token %}
+          {% include "core/_erreurs_formulaire.html" %}
           <div class="mb-3">
-            <label class="form-label" for="{{ form.texte.id_for_label }}">{{ form.texte.label }}</label>
-            {{ form.texte }}
-            <small class="form-text text-body-secondary">{{ form.texte.help_text }}</small>
+            <label class="form-label" for="{{ form.texte.id_for_label }}">{% include "core/_libelle.html" with field=form.texte %}</label>
+            {{ form.texte|accessible }}
+            {% include "core/_aide_erreurs.html" with field=form.texte %}
           </div>
           <div class="mb-3">
-            <label class="form-label" for="{{ form.logo.id_for_label }}">{{ form.logo.label }}</label>
+            <label class="form-label" for="{{ form.logo.id_for_label }}">{% include "core/_libelle.html" with field=form.logo %}</label>
             {% if introduction.logo %}<div class="mb-2"><img src="{{ introduction.logo }}" alt="Logo actuel" class="logo-introduction border rounded p-1"></div>{% endif %}
-            {{ form.logo }}
-            <small class="form-text text-body-secondary">{{ form.logo.help_text }}</small>
-            {% for e in form.logo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+            {{ form.logo|accessible }}
+            {% include "core/_aide_erreurs.html" with field=form.logo %}
             {% if introduction.logo %}<div class="form-check mt-2">{{ form.supprimer_logo }}<label class="form-check-label" for="{{ form.supprimer_logo.id_for_label }}">{{ form.supprimer_logo.label }}</label></div>{% endif %}
           </div>
           <button type="submit" class="btn btn-primary">Enregistrer</button>

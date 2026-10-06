@@ -1,0 +1,2 @@
+{% comment %}Libellé d'un champ, avec l'astérisque des champs obligatoires (RGAA 11.10). L'astérisque est masqué aux
+lecteurs d'écran : l'attribut required du champ indique déjà qu'il est obligatoire.{% endcomment %}{{ field.label }}{% if field.field.required %} <span class="obligatoire" aria-hidden="true">*</span>{% endif %}

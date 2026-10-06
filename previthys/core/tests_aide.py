@@ -34,6 +34,7 @@ class AideTests(TestCase):
         html = self.client.get(reverse("aide")).content.decode()
         sections = set(re.findall(r'<section id="([^"]+)"', html))
         liens = set(re.findall(r'href="#([^"]+)"', html))
+        liens -= {"contenu", "menu-principal"}   # liens d'évitement, communs à toutes les pages
         from core.templatetags.aide import RUBRIQUES
         self.assertTrue(liens <= sections, liens - sections)
         self.assertTrue({a for _, a in RUBRIQUES} <= sections)

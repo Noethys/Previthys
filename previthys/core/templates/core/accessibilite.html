@@ -1,0 +1,62 @@
+{% extends "core/base.html" %}
+{% comment %}Déclaration d'accessibilité, sur le modèle de la DINUM (RGAA 4.1). Les valeurs viennent de PREVITHYS_ACCESSIBILITE.{% endcomment %}
+{% block titre_page %}Déclaration d'accessibilité{% endblock %}
+{% block contenu %}
+<div class="contenu-aide">
+  <h1 class="h4">Déclaration d'accessibilité</h1>
+  <p>{{ PREVITHYS_ORGANISATION }} s'engage à rendre ses services numériques accessibles, conformément à l'article 47 de la loi n° 2005-102 du 11 février 2005.</p>
+  <p>Cette déclaration d'accessibilité s'applique à l'application <b>Previthys</b>, outil de gestion du document unique d'évaluation des risques professionnels mis à disposition des agents.</p>
+
+  <h2 class="h5 mt-4">État de conformité</h2>
+  <p>L'application Previthys est <b>{{ etat }}</b> avec le référentiel général d'amélioration de l'accessibilité (RGAA), version 4.1.
+    {% if declaration.etat == "non" %}Aucun audit de conformité n'a encore été réalisé.{% endif %}</p>
+
+  <h2 class="h5 mt-4">Résultats des tests</h2>
+  {% if declaration.taux %}
+    <p>L'audit de conformité réalisé{% if declaration.auditeur %} par {{ declaration.auditeur }}{% endif %}{% if declaration.date_audit %} en {{ declaration.date_audit }}{% endif %} révèle que <b>{{ declaration.taux }}</b> des critères du RGAA version 4.1 sont respectés.</p>
+  {% else %}
+    <p>Aucun audit de conformité n'a encore été réalisé. L'application a toutefois été conçue en suivant les critères du RGAA 4.1 : structure des pages et liens d'évitement, navigation au clavier, formulaires étiquetés avec indication des champs obligatoires et des erreurs, tableaux de données structurés, contrastes de couleurs, information jamais donnée par la seule couleur.</p>
+  {% endif %}
+
+  <h2 class="h5 mt-4">Contenus non accessibles</h2>
+  <h3 class="h6">Non-conformités connues</h3>
+  <ul>
+    <li>Le document unique imprimé ou enregistré en PDF depuis le navigateur n'est pas un PDF balisé ; la version consultable à l'écran est la version de référence accessible.</li>
+    <li>Le fichier Excel exporté reprend les données des listes sans mise en forme accessible particulière (titres de colonnes uniquement).</li>
+  </ul>
+  <h3 class="h6">Contenus non soumis à l'obligation d'accessibilité</h3>
+  <ul>
+    <li>L'interface d'administration technique (gestion des comptes et des droits), réservée aux administrateurs, est fournie par le cadriciel Django et n'entre pas dans le périmètre de cette déclaration.</li>
+  </ul>
+
+  <h2 class="h5 mt-4">Établissement de cette déclaration d'accessibilité</h2>
+  <p>{% if declaration.date_declaration %}Cette déclaration a été établie le {{ declaration.date_declaration }}.{% else %}Cette déclaration n'a pas encore été datée par la structure qui met l'application à disposition.{% endif %}</p>
+  <h3 class="h6">Technologies utilisées pour la réalisation de l'application</h3>
+  <ul><li>HTML5</li><li>CSS (Bootstrap 5)</li><li>JavaScript (jQuery, DataTables)</li></ul>
+  <h3 class="h6">Environnement de test recommandé</h3>
+  <ul>
+    <li>NVDA avec Firefox (Windows)</li>
+    <li>JAWS avec Chrome ou Edge (Windows)</li>
+    <li>VoiceOver avec Safari (macOS)</li>
+  </ul>
+
+  <h2 class="h5 mt-4">Retour d'information et contact</h2>
+  <p>Si vous n'arrivez pas à accéder à un contenu ou à un service, vous pouvez contacter le responsable de l'application pour être orienté vers une alternative accessible ou obtenir le contenu sous une autre forme.</p>
+  {% if declaration.contact %}
+    <ul>
+      <li>{% if contact_est_url %}<a href="{{ declaration.contact }}">Formulaire de contact</a>{% else %}Par courriel : <a href="mailto:{{ declaration.contact }}">{{ declaration.contact }}</a>{% endif %}</li>
+    </ul>
+  {% else %}
+    <p>Adressez-vous au référent numérique ou au service informatique de {{ PREVITHYS_ORGANISATION }}.</p>
+  {% endif %}
+
+  <h2 class="h5 mt-4">Voies de recours</h2>
+  <p>Si vous constatez un défaut d'accessibilité vous empêchant d'accéder à un contenu ou à une fonctionnalité, que vous nous le signalez et que vous ne parvenez pas à obtenir une réponse de notre part, vous êtes en droit de faire parvenir vos doléances ou une demande de saisine au Défenseur des droits.</p>
+  <p>Plusieurs moyens sont à votre disposition :</p>
+  <ul>
+    <li><a href="https://formulaire.defenseurdesdroits.fr/">Écrire un message au Défenseur des droits</a></li>
+    <li><a href="https://www.defenseurdesdroits.fr/carte-des-delegues">Contacter le délégué du Défenseur des droits dans votre région</a></li>
+    <li>Envoyer un courrier par la poste (gratuit, ne pas mettre de timbre) : Défenseur des droits, Libre réponse 71120, 75342 Paris CEDEX 07</li>
+  </ul>
+</div>
+{% endblock %}

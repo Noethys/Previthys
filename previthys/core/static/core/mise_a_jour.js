@@ -13,5 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var bouton = form.querySelector("button[type=submit]");
     bouton.disabled = true;
     bouton.textContent = "Installation en cours, veuillez patienter...";
+    var etat = document.getElementById("etat-mise-a-jour");
+    if (etat) { etat.textContent = "Installation en cours, veuillez patienter. La page se rechargera à la fin."; }
   });
 });

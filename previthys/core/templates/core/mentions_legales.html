@@ -1,0 +1,66 @@
+{% extends "core/base.html" %}
+{% comment %}Mentions légales (LCEN) et données personnelles (RGPD). Les valeurs viennent de PREVITHYS_MENTIONS_LEGALES.{% endcomment %}
+{% block titre_page %}Mentions légales{% endblock %}
+{% block contenu %}
+<div class="contenu-aide mentions-legales">
+  <h1 class="h4">Mentions légales</h1>
+
+  <h2 class="h5 mt-4">Éditeur du service</h2>
+  <dl class="row mb-0">
+    <dt class="col-sm-4">Structure</dt><dd class="col-sm-8">{{ mentions.editeur }}</dd>
+    <dt class="col-sm-4">Adresse</dt><dd class="col-sm-8">{{ mentions.adresse|default:"Non renseignée"|linebreaksbr }}</dd>
+    {% if mentions.telephone %}<dt class="col-sm-4">Téléphone</dt><dd class="col-sm-8">{{ mentions.telephone }}</dd>{% endif %}
+    {% if mentions.courriel %}<dt class="col-sm-4">Courriel</dt><dd class="col-sm-8"><a href="mailto:{{ mentions.courriel }}">{{ mentions.courriel }}</a></dd>{% endif %}
+    {% if mentions.siret %}<dt class="col-sm-4">SIRET</dt><dd class="col-sm-8">{{ mentions.siret }}</dd>{% endif %}
+    <dt class="col-sm-4">Directeur de la publication</dt><dd class="col-sm-8">{{ mentions.directeur_publication|default:"Non renseigné" }}</dd>
+  </dl>
+
+  <h2 class="h5 mt-4">Hébergement</h2>
+  <dl class="row mb-0">
+    <dt class="col-sm-4">Hébergeur</dt><dd class="col-sm-8">{{ mentions.hebergeur|default:"Non renseigné" }}</dd>
+    {% if mentions.hebergeur_adresse %}<dt class="col-sm-4">Adresse</dt><dd class="col-sm-8">{{ mentions.hebergeur_adresse|linebreaksbr }}</dd>{% endif %}
+    {% if mentions.hebergeur_telephone %}<dt class="col-sm-4">Téléphone</dt><dd class="col-sm-8">{{ mentions.hebergeur_telephone }}</dd>{% endif %}
+  </dl>
+
+  <h2 class="h5 mt-4">Logiciel</h2>
+  <p>Ce service repose sur <b>Previthys</b>, logiciel libre de gestion du document unique d'évaluation des risques professionnels, conçu et développé par Ivan Lucas et distribué sous licence GNU GPL. Le code source est publié sur <a href="https://github.com/Noethys/Previthys">GitHub</a>.</p>
+  <p>{{ mentions.editeur }}, qui installe et exploite l'application, est seul responsable du service et des données qu'il contient.</p>
+
+  <h2 class="h5 mt-4">Données personnelles</h2>
+  <h3 class="h6">Responsable du traitement</h3>
+  <p>{{ mentions.editeur }} est responsable du traitement des données personnelles enregistrées dans l'application.
+    {% if mentions.dpo %}Délégué à la protection des données : {% if dpo_est_courriel %}<a href="mailto:{{ mentions.dpo }}">{{ mentions.dpo }}</a>{% else %}{{ mentions.dpo }}{% endif %}.{% endif %}</p>
+
+  <h3 class="h6">Finalité et base légale</h3>
+  <p>L'application sert à élaborer, mettre à jour et conserver le document unique d'évaluation des risques professionnels, que tout employeur doit tenir (articles L4121-3 et R4121-1 et suivants du code du travail). Le traitement repose sur cette obligation légale.</p>
+
+  <h3 class="h6">Données traitées</h3>
+  <ul>
+    <li><b>Comptes des utilisateurs</b> : identifiant, nom, prénom, adresse électronique, droits d'accès.</li>
+    <li><b>Journal des modifications</b> : pour chaque création, modification ou suppression, l'utilisateur, la date et l'objet concerné.</li>
+    <li><b>Sécurité des connexions</b> : identifiant, adresse IP et navigateur utilisés lors des connexions et des tentatives échouées, pour bloquer les tentatives d'intrusion.</li>
+    <li><b>Contenu du document unique</b> : unités de travail, risques, actions de prévention, nom des responsables d'actions et fichiers joints saisis par les utilisateurs.</li>
+  </ul>
+
+  <h3 class="h6">Durée de conservation</h3>
+  <p>Les versions successives du document unique sont conservées 40 ans, comme l'impose l'article L4121-3-1 du code du travail. Les autres données sont conservées tant qu'elles sont utiles à la tenue du document unique, selon les règles définies par {{ mentions.editeur }}.</p>
+
+  <h3 class="h6">Destinataires</h3>
+  <p>Les données sont accessibles aux seuls utilisateurs habilités de {{ mentions.editeur }}, selon leurs droits, et à l'hébergeur pour les besoins techniques du service. Elles ne sont ni cédées ni utilisées à des fins commerciales. L'application ne fait appel à aucun service extérieur : pas de police de caractères, de script ni d'outil de mesure d'audience chargé depuis un autre site.</p>
+
+  <h3 class="h6">Cookies et stockage local</h3>
+  <p>L'application dépose uniquement les cookies strictement nécessaires à son fonctionnement, qui ne demandent pas de consentement :</p>
+  <ul>
+    <li><b>sessionid</b> : maintien de la connexion (12 heures au plus) ;</li>
+    <li><b>csrftoken</b> : protection des formulaires contre les envois frauduleux.</li>
+  </ul>
+  <p>Les préférences d'affichage des listes (tri, nombre de lignes, colonnes masquées) sont enregistrées dans le navigateur de l'utilisateur et ne sont jamais transmises au serveur.</p>
+
+  <h3 class="h6">Vos droits</h3>
+  <p>Vous disposez d'un droit d'accès, de rectification, d'effacement et de limitation du traitement de vos données, ainsi que d'un droit d'opposition, dans les limites prévues par le règlement général sur la protection des données (RGPD). Pour les exercer, adressez-vous à {% if mentions.dpo %}{% if dpo_est_courriel %}<a href="mailto:{{ mentions.dpo }}">{{ mentions.dpo }}</a>{% else %}{{ mentions.dpo }}{% endif %}{% elif mentions.courriel %}<a href="mailto:{{ mentions.courriel }}">{{ mentions.courriel }}</a>{% else %}{{ mentions.editeur }}{% endif %}.</p>
+  <p>Si vous estimez, après nous avoir contactés, que vos droits ne sont pas respectés, vous pouvez adresser une réclamation à la <a href="https://www.cnil.fr/fr/plaintes">Commission nationale de l'informatique et des libertés (CNIL)</a>.</p>
+
+  <h2 class="h5 mt-4">Accessibilité</h2>
+  <p>L'état de conformité de l'application au référentiel général d'amélioration de l'accessibilité est présenté dans la <a href="{% url 'accessibilite' %}">déclaration d'accessibilité</a>.</p>
+</div>
+{% endblock %}

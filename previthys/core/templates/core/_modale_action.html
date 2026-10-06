@@ -1,4 +1,4 @@
-<div class="modal fade" id="action-{% if action %}{{ action.pk }}{% else %}nouvelle{% endif %}" tabindex="-1" aria-labelledby="action-{% if action %}{{ action.pk }}{% else %}nouvelle{% endif %}-titre" aria-hidden="true">
+{% load accessibilite %}<div class="modal fade" id="action-{% if action %}{{ action.pk }}{% else %}nouvelle{% endif %}" tabindex="-1" aria-labelledby="action-{% if action %}{{ action.pk }}{% else %}nouvelle{% endif %}-titre" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <form method="post" action="{{ url_action }}" class="modal-content" novalidate>
       {% csrf_token %}
@@ -7,6 +7,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
       </div>
       <div class="modal-body">
+        {% include "core/_mention_obligatoire.html" %}
         {% if action and action.est_commune %}
           <div class="alert encart-commune py-2"><b>Action commune à {{ action.nbre_unites }} unités.</b> Les modifications (description, statut, coût…) s'appliqueront à toutes les unités concernées.
             {% if perms.core.change_actionprevention %}<a href="{% url 'actions_modifier' action.pk %}">Gérer les risques concernés</a>{% endif %}</div>
@@ -16,9 +17,9 @@
         <div class="row">
         {% for field in form_action %}
           <div class="mb-3 {% if field.name == 'description' %}col-12{% else %}col-md-6{% endif %}">
-            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.help_text %}<small class="form-text text-body-secondary">{{ field.help_text }}</small>{% endif %}
+            <label class="form-label" for="{{ field.id_for_label }}">{% include "core/_libelle.html" %}</label>
+            {{ field|accessible }}
+            {% include "core/_aide_erreurs.html" %}
           </div>
         {% endfor %}
         </div>

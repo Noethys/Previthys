@@ -32,13 +32,26 @@ def badge_statut(action):
     return format_html('<span class="badge text-bg-{}">{}</span>', couleur, action.get_statut_display())
 
 
+LONGUEUR_ACTION_LISTE = 60   # au-delà, la description est tronquée dans la liste et affichée en entier au survol
+
+
+def texte_tronque(texte, longueur=LONGUEUR_ACTION_LISTE):
+    """Texte tronqué à l'écran, complet dans une infobulle au survol. Les lecteurs d'écran, la recherche et les
+    exports (Excel, impression) reçoivent le texte complet ; la version tronquée leur est masquée."""
+    court = Truncator(texte).chars(longueur)
+    if court == texte:
+        return texte
+    return format_html('<span class="texte-tronque" data-bs-toggle="tooltip" data-bs-title="{}"><span aria-hidden="true">{}</span>'
+                       '<span class="visually-hidden">{}</span></span>', texte, court, texte)
+
+
 def liste_actions(risque):
     """Cellule « Actions de prévention » de la liste des risques : une ligne par action, avec son statut."""
     actions = list(risque.actions.all())
     if not actions:
         return format_html('<span class="text-body-secondary">Aucune</span>')
     return format_html('<ul class="list-unstyled mb-0 liste-actions">{}</ul>', format_html_join(
-        "", '<li>{} {}{}</li>', ((badge_statut(a), Truncator(a.description).chars(60),
+        "", '<li>{} {}{}</li>', ((badge_statut(a), texte_tronque(a.description),
                                   format_html(' <small class="text-body-secondary">(commune)</small>') if a.est_commune else "") for a in actions)))
 
 
@@ -60,6 +73,7 @@ class Liste(crud.Liste):
     description = NOTE_COTATION
     colonnes = ["ID", "Unité", "Danger", "Catégorie", "Fréquence", "Gravité", "Maîtrise", "Niveau", "Actions de prévention", "Fichiers"]
     colonnes_masquees = ["Fréquence", "Gravité", "Maîtrise"]   # la cotation reste visible dans la colonne Niveau
+    largeurs_colonnes = {"Danger": "16%", "Actions de prévention": "34%"}   # plus de place pour les actions
     ordre = "7,desc"
     memoriser_filtres = True
     url_ajouter, url_modifier, url_supprimer = "risques_ajouter", "risques_modifier", "risques_supprimer"

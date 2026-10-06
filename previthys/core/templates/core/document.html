@@ -13,7 +13,7 @@
 
   {# ---------- Page de garde ---------- #}
   <section class="page-garde">
-    {% if introduction.logo %}<img src="{{ introduction.logo }}" alt="Logo" class="logo-garde">{% endif %}
+    {% if introduction.logo %}<img src="{{ introduction.logo }}" alt="" class="logo-garde">{% endif %}
     <p class="surtitre">Prévention des risques professionnels</p>
     <h1>Document unique d'évaluation des risques professionnels</h1>
     <p class="organisation">{% if version and version.structure %}{{ version.structure }}{% else %}{{ PREVITHYS_ORGANISATION }}{% endif %}</p>
@@ -38,9 +38,10 @@
       {% endfor %}
     </div>
     <table class="table table-sm table-bordered niveaux-cotation mt-2">
-      <thead><tr><th>Cotation F × G × M</th>{% for code, lib, a, b in methode.niveaux %}<th class="niveau-{{ code }} text-center">{{ lib }}</th>{% endfor %}</tr></thead>
-      <tbody><tr><td>Valeurs</td>{% for code, lib, a, b in methode.niveaux %}<td class="text-center">{{ a }} à {{ b }}</td>{% endfor %}</tr>
-        <tr><td>Priorité</td><td class="text-center">Priorité 3</td><td class="text-center">Priorité 2</td><td class="text-center">Priorité 1 : à traiter en premier</td></tr></tbody>
+      <caption class="visually-hidden">Niveaux de cotation</caption>
+      <thead><tr><th scope="col">Cotation F × G × M</th>{% for code, lib, a, b in methode.niveaux %}<th scope="col" class="niveau-{{ code }} text-center">{{ lib }}</th>{% endfor %}</tr></thead>
+      <tbody><tr><th scope="row" class="fw-normal">Valeurs</th>{% for code, lib, a, b in methode.niveaux %}<td class="text-center">{{ a }} à {{ b }}</td>{% endfor %}</tr>
+        <tr><th scope="row" class="fw-normal">Priorité</th><td class="text-center">Priorité 3</td><td class="text-center">Priorité 2</td><td class="text-center">Priorité 1 : à traiter en premier</td></tr></tbody>
     </table>
 
     <h3 class="h6 mt-4">Lecture du document</h3>
@@ -69,7 +70,8 @@
   {% if mesures_generales %}
     <h2 class="h5 mt-4">Mesures générales de prévention <small class="text-body-secondary">(ensemble des unités de travail)</small></h2>
     <table class="table table-bordered table-sm">
-      <thead><tr><th style="width:50%">Action</th><th>Catégorie</th><th>Responsable</th><th>Échéance</th><th>Statut</th></tr></thead>
+      <caption class="visually-hidden">Mesures générales de prévention</caption>
+      <thead><tr><th scope="col" style="width:50%">Action</th><th scope="col">Catégorie</th><th scope="col">Responsable</th><th scope="col">Échéance</th><th scope="col">Statut</th></tr></thead>
       <tbody>
         {% for a in mesures_generales %}
           <tr><td>{{ a.description|linebreaksbr }}</td><td>{{ a.categorie }}</td><td>{{ a.responsable }}</td><td class="text-nowrap">{{ a.echeance }}</td>
@@ -82,16 +84,17 @@
     <h2 class="h5 titre-unite" id="unite-{{ forloop.counter }}">{{ unite.nom }} <small class="effectif-unite">— {{ unite.effectif }} agent{{ unite.effectif|pluralize }}</small></h2>
     {% if unite.description %}<p class="description-unite">{{ unite.description }}</p>{% endif %}
     <table class="table table-bordered table-sm table-document">
-      <thead><tr><th>Danger</th><th>Catégorie</th><th class="text-center">F × G × M</th><th>Mesures et actions de prévention</th></tr></thead>
+      <caption class="visually-hidden">Risques de l'unité {{ unite.nom }}</caption>
+      <thead><tr><th scope="col">Danger</th><th scope="col">Catégorie</th><th scope="col" class="text-center"><abbr title="Fréquence × Gravité × Maîtrise">F × G × M</abbr></th><th scope="col">Mesures et actions de prévention</th></tr></thead>
       <tbody>
         {% for r in unite.risques %}
           <tr>
             <td>{{ r.danger }}{% if r.situation %}<br><small class="text-body-secondary">{{ r.situation }}</small>{% endif %}
-              {% if r.images %}<div class="d-flex flex-wrap gap-1 mt-1">{% for img in r.images %}<img src="{{ img.url }}" alt="{{ img.nom }}" class="photo-risque-impression">{% endfor %}</div>{% endif %}
+              {% if r.images %}<div class="d-flex flex-wrap gap-1 mt-1">{% for img in r.images %}<img src="{{ img.url }}" alt="Photo jointe au risque : {{ r.danger }}" title="{{ img.nom }}" class="photo-risque-impression">{% endfor %}</div>{% endif %}
             </td>
             <td>{{ r.categorie }}</td>
-            <td class="text-center text-nowrap niveau-{{ r.niveau }}">{{ r.frequence }} × {{ r.gravite }} × {{ r.maitrise }}<br>= {{ r.cotation }}</td>
-            <td>{% for m in r.mesures_liste %}<div class="action-document"><span class="badge text-bg-info">Existante</span> {{ m }}</div>{% endfor %}{% for a in r.actions_toutes %}{% include "core/_action_document.html" %}{% endfor %}</td>
+            <td class="text-center text-nowrap niveau-{{ r.niveau }}">{{ r.frequence }} × {{ r.gravite }} × {{ r.maitrise }}<br>= {{ r.cotation }}<span class="visually-hidden">, niveau {{ r.niveau }}</span></td>
+            <td>{% if r.mesures_liste or r.actions_toutes %}<ul class="liste-mesures">{% for m in r.mesures_liste %}<li class="action-document"><span class="badge text-bg-info">Existante</span> {{ m }}</li>{% endfor %}{% for a in r.actions_toutes %}{% include "core/_action_document.html" %}{% endfor %}</ul>{% endif %}</td>
           </tr>
         {% empty %}
           <tr><td colspan="4" class="text-body-secondary">Aucun risque saisi.</td></tr>
