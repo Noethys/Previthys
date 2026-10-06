@@ -1,3 +1,7 @@
+Version 1.2.8 (06/10/2026) :
+
+- Amélioration de la page de connexion
+
 Version 1.2.7 (30/09/2026) :
 
 - Ajout de l'aide
