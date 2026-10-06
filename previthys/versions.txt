@@ -1,3 +1,9 @@
+Version 1.2.9 (06/10/2026) :
+
+- Ajout de la mémorisation des filtres
+- Ajout de la mise à jour auto des css
+- Ajout de l'animation de la page de connexion
+
 Version 1.2.8 (06/10/2026) :
 
 - Amélioration de la page de connexion
