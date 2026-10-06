@@ -8,7 +8,6 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
-from django.utils.text import Truncator
 
 from core.forms.actions import FormulaireActionRisque
 from core.forms.risques import FormulaireRisque
@@ -32,27 +31,17 @@ def badge_statut(action):
     return format_html('<span class="badge text-bg-{}">{}</span>', couleur, action.get_statut_display())
 
 
-LONGUEUR_ACTION_LISTE = 60   # au-delà, la description est tronquée dans la liste et affichée en entier au survol
-
-
-def texte_tronque(texte, longueur=LONGUEUR_ACTION_LISTE):
-    """Texte tronqué à l'écran, complet dans une infobulle au survol. Les lecteurs d'écran, la recherche et les
-    exports (Excel, impression) reçoivent le texte complet ; la version tronquée leur est masquée."""
-    court = Truncator(texte).chars(longueur)
-    if court == texte:
-        return texte
-    return format_html('<span class="texte-tronque" data-bs-toggle="tooltip" data-bs-title="{}"><span aria-hidden="true">{}</span>'
-                       '<span class="visually-hidden">{}</span></span>', texte, court, texte)
-
-
 def liste_actions(risque):
-    """Cellule « Actions de prévention » de la liste des risques : une ligne par action, avec son statut."""
+    """Cellule « Actions de prévention » de la liste des risques : une ligne par action, avec son statut.
+    La description est envoyée en entier : la coupure à deux lignes est faite à l'affichage (CSS), selon la largeur
+    réelle de la colonne, et le texte complet apparaît au survol quand il est coupé (voir core/listes.js)."""
     actions = list(risque.actions.all())
     if not actions:
         return format_html('<span class="text-body-secondary">Aucune</span>')
     return format_html('<ul class="list-unstyled mb-0 liste-actions">{}</ul>', format_html_join(
-        "", '<li>{} {}{}</li>', ((badge_statut(a), texte_tronque(a.description),
-                                  format_html(' <small class="text-body-secondary">(commune)</small>') if a.est_commune else "") for a in actions)))
+        "", '<li class="ligne-action" data-infobulle="{}">{} <span class="texte-action">{}</span>{}</li>',
+        ((a.description, badge_statut(a), a.description,
+          format_html(' <small class="text-body-secondary">(commune)</small>') if a.est_commune else "") for a in actions)))
 
 
 class AjoutPiecesJointes:

@@ -69,6 +69,11 @@
       if (Array.isArray(pref.masquees)) { dt.columns(pref.masquees).visible(false); }
       else { dt.columns(".masquee-par-defaut").visible(false); }
       function memoriser(cle_pref, valeur) { var p = lire(cle); p[cle_pref] = valeur; ecrire(cle, p); }
+      // Textes coupés selon la largeur des colonnes : à recalculer après chaque affichage ou changement de colonnes
+      if (window.marquerTextesCoupes) {
+        dt.on("draw.dt column-visibility.dt", function () { setTimeout(function () { marquerTextesCoupes(table); }, 0); });
+        marquerTextesCoupes(table);
+      }
       dt.on("length.dt", function (e, settings, len) { memoriser("longueur", len); });
       dt.on("order.dt", function () { var o = dt.order(); if (o.length) { memoriser("ordre", o[0]); } });
       dt.on("column-visibility.dt", function () {

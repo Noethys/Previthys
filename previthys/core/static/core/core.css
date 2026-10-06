@@ -232,6 +232,9 @@ a.kpi-mini:hover { background: #f8f9fa; }
 .btn-outline-success { --bs-btn-color: #146c43; --bs-btn-border-color: #146c43; }
 .btn-outline-danger { --bs-btn-color: #b02a37; --bs-btn-border-color: #b02a37; }
 
-/* Texte tronqué dont la version complète s'affiche au survol (infobulle) : soulignement pointillé discret. */
-.texte-tronque { cursor: help; text-decoration: underline dotted rgba(33, 37, 41, .45); text-underline-offset: .2em; }
+/* Actions de la liste des risques : deux lignes au plus, coupées selon la largeur réelle de la colonne. Quand le texte
+   est coupé (classe ajoutée par core/app.js), soulignement pointillé discret et infobulle au survol. */
+.liste-actions .ligne-action { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.liste-actions .ligne-action.est-coupe { cursor: help; }
+.liste-actions .ligne-action.est-coupe .texte-action { text-decoration: underline dotted rgba(33, 37, 41, .45); text-underline-offset: .2em; }
 .tooltip-inner { max-width: 360px; text-align: left; }

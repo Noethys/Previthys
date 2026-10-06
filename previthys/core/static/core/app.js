@@ -69,13 +69,27 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-/* Infobulles Bootstrap (ex. texte complet d'une action tronquée dans la liste des risques) : créées au premier survol,
-   ce qui fonctionne aussi pour les lignes affichées plus tard par la pagination des listes. */
+/* Texte coupé à l'affichage (ex. actions de la liste des risques, limitées à deux lignes) : infobulle avec le texte
+   complet au survol, seulement s'il est réellement coupé. La coupure dépend de la largeur de la colonne, qui change
+   quand on masque ou réaffiche des colonnes : elle est donc vérifiée à chaque survol. */
 document.addEventListener("mouseover", function (e) {
-  var element = e.target.closest && e.target.closest('[data-bs-toggle="tooltip"]');
-  if (!element || !window.bootstrap || bootstrap.Tooltip.getInstance(element)) return;
-  bootstrap.Tooltip.getOrCreateInstance(element, {container: "body"}).show();
+  var element = e.target.closest && e.target.closest("[data-infobulle]");
+  if (!element || !window.bootstrap) return;
+  var instance = bootstrap.Tooltip.getInstance(element);
+  var coupe = element.scrollHeight > element.clientHeight + 1;
+  if (!coupe) { if (instance) instance.dispose(); return; }
+  if (instance) return;
+  bootstrap.Tooltip.getOrCreateInstance(element, {title: element.getAttribute("data-infobulle"), container: "body"}).show();
 });
+
+/* Repère visuel (soulignement pointillé) sur les textes coupés, recalculé quand la mise en page change. */
+function marquerTextesCoupes(racine) {
+  (racine || document).querySelectorAll("[data-infobulle]").forEach(function (element) {
+    element.classList.toggle("est-coupe", element.scrollHeight > element.clientHeight + 1);
+  });
+}
+window.addEventListener("resize", function () { marquerTextesCoupes(); });
+document.addEventListener("DOMContentLoaded", function () { marquerTextesCoupes(); });
 
 /* Liens d'évitement : le focus est réellement déplacé sur la zone ciblée (utile pour certains navigateurs). */
 document.addEventListener("click", function (e) {
