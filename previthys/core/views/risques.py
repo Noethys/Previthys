@@ -32,6 +32,17 @@ def badge_statut(action):
     return format_html('<span class="badge text-bg-{}">{}</span>', couleur, action.get_statut_display())
 
 
+def cellule_danger(risque):
+    """Cellule « Danger » de la liste des risques : le danger, avec la situation de travail en dessous (comme dans
+    le document unique), coupée à deux lignes à l'affichage avec le texte complet au survol. Tri sur le danger seul.
+    Le séparateur masqué donne une lecture correcte aux lecteurs d'écran et dans les exports."""
+    situation = " ".join(risque.situation.split())
+    if not situation:
+        return risque.danger, risque.danger
+    return format_html('{}<span class="visually-hidden"> : </span><div class="situation-risque" data-infobulle="{}">{}</div>',
+                       risque.danger, situation, situation), risque.danger
+
+
 def code_macaron(action):
     """Statut affiché d'une action, avec les mêmes codes que le document unique (pour le tri)."""
     if action.statut == "terminee":
@@ -184,7 +195,7 @@ class Liste(crud.Liste):
         return [{"titre": "Filtre", "boutons": [{"libelle": " · ".join(actifs) + "  ✕", "nombre": n, "actif": True, "url": url}]}]
 
     def cellules(self, o):
-        return [o.pk, o.unite.nom, o.danger, o.categorie.nom, o.frequence, o.gravite, o.maitrise, (badge_niveau(o), o.cotation), liste_mesures_actions(o), o.nbre_pieces_jointes]
+        return [o.pk, o.unite.nom, cellule_danger(o), o.categorie.nom, o.frequence, o.gravite, o.maitrise, (badge_niveau(o), o.cotation), liste_mesures_actions(o), o.nbre_pieces_jointes]
 
 
 class Ajouter(AjoutPiecesJointes, crud.Ajouter):

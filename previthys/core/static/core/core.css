@@ -243,6 +243,8 @@ a.kpi-mini:hover { background: #f8f9fa; }
 .liste-actions .ligne-action { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 .liste-actions .ligne-action.est-coupe { cursor: help; }
 .liste-actions .ligne-action.est-coupe .texte-action { text-decoration: underline dotted rgba(33, 37, 41, .45); text-underline-offset: .2em; }
+.situation-risque { font-size: .8rem; color: var(--bs-secondary-color); margin-top: 2px; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.situation-risque.est-coupe { cursor: help; text-decoration: underline dotted rgba(33, 37, 41, .45); text-underline-offset: .2em; }
 .tooltip-inner { max-width: 360px; text-align: left; }
 
 /* Texte « jaune » (chiffres à surveiller du tableau de bord) : le jaune vif n'est lisible qu'en fond, pas en texte

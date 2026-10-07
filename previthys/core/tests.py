@@ -280,6 +280,13 @@ class MesuresRealiseesTests(BaseTest):
         ordre = [html.index(t) for t in ("Échelles contrôlées.", "Échelles remplacées", "Action en cours", "Action en retard", "Formation gestes et postures")]
         self.assertEqual(ordre, sorted(ordre))   # existantes, puis terminées, en cours, en retard, à faire
 
+    def test_liste_des_risques_situation_sous_le_danger(self):
+        self.risque.situation = "Entretien de l'éclairage\ndes bâtiments"
+        self.risque.save()
+        html = self.client.get(reverse("risques_liste")).content.decode()
+        self.assertIn('<td data-order="Chute">Chute<span class="visually-hidden"> : </span>'
+                      '<div class="situation-risque" data-infobulle="Entretien de l&#x27;éclairage des bâtiments">', html)
+
     def test_anciennes_archives_sans_indicateur_restent_lisibles(self):
         ancienne = [{"nom": "U", "effectif": 1, "description": "", "risques": [{
             "categorie": "Autre", "danger": "Ancien danger", "situation": "", "gravite": 2, "frequence": 2, "cotation": 4, "niveau": "moyen",
