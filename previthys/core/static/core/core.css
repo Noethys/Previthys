@@ -106,6 +106,7 @@ a.kpi-mini:hover { background: #f8f9fa; }
 .introduction-document { background: #fff; border: 1px solid var(--bs-border-color); border-radius: .5rem; padding: 1.25rem 1.5rem; margin-bottom: 2rem; }
 .introduction-texte ul { margin-bottom: .75rem; }
 .baremes th { background: #f8f9fa; }
+.categories-risques thead th { background: #f8f9fa; }
 .liste-unites { columns: 2; }
 .logo-introduction { max-height: 80px; max-width: 240px; }
 @media print {

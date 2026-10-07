@@ -53,6 +53,20 @@
       <span class="badge text-bg-danger">En retard</span> (échéance dépassée).
       Les mesures générales, qui concernent l'ensemble des unités, sont présentées avant les unités. Une « action commune » est une même action menée pour plusieurs unités.</p>
 
+    {% if categories_risques %}
+      <h3 class="h6 mt-4">Catégories de risques</h3>
+      <p>Les risques sont classés selon les catégories suivantes :</p>
+      <table class="table table-sm table-bordered categories-risques">
+        <caption class="visually-hidden">Catégories de risques</caption>
+        <thead><tr><th scope="col" style="width: 34%">Catégorie</th><th scope="col">Description</th></tr></thead>
+        <tbody>
+          {% for nom, description, n in categories_risques %}
+            <tr><th scope="row">{{ nom }} <small class="fw-normal text-body-secondary">({{ n }} risque{{ n|pluralize }})</small></th><td>{{ description|linebreaksbr }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
     <h3 class="h6 mt-4">Unités de travail</h3>
     <p>Une unité de travail regroupe des agents exposés à des risques de même nature. {{ donnees|length }} unité{{ donnees|length|pluralize }} de travail {{ donnees|length|pluralize:"est retenue,sont retenues" }} :</p>
     <ol class="liste-unites">

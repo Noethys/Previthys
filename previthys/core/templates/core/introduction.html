@@ -43,7 +43,7 @@
         <h2 class="h6">Aperçu du texte enregistré</h2>
         <div class="introduction-texte small">{% if apercu %}{{ apercu }}{% else %}<p class="text-body-secondary mb-0">Aucun texte pour l'instant.</p>{% endif %}</div>
         <hr>
-        <p class="small text-body-secondary mb-0">Ajouté automatiquement dans le document : méthode d'évaluation (barèmes F, G, M et niveaux {% for code, lib, a, b in methode.niveaux %}{{ lib|lower }} {{ a }}–{{ b }}{% if not forloop.last %}, {% endif %}{% endfor %}), lecture du document, liste des unités de travail et axes du plan d'actions.</p>
+        <p class="small text-body-secondary mb-0">Ajouté automatiquement dans le document : méthode d'évaluation (barèmes F, G, M et niveaux {% for code, lib, a, b in methode.niveaux %}{{ lib|lower }} {{ a }}–{{ b }}{% if not forloop.last %}, {% endif %}{% endfor %}), lecture du document, catégories de risques, liste des unités de travail et axes du plan d'actions.</p>
       </div>
     </div>
   </div>

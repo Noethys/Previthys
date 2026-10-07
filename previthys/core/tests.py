@@ -260,6 +260,17 @@ class MesuresRealiseesTests(BaseTest):
         self.assertEqual(html.count("Échelles remplacées"), 1)
         self.assertIn("Formation gestes et postures", html)
 
+    def test_document_liste_les_categories_de_risques_utilisees(self):
+        self.categorie.description = "Risques non classés ailleurs."
+        self.categorie.save()
+        html = self.client.get(reverse("document")).content.decode()
+        debut = html.index("Catégories de risques</h3>")
+        self.assertLess(html.index("Lecture du document"), debut)
+        self.assertLess(debut, html.index("Unités de travail</h3>"))
+        self.assertIn('Autre <small class="fw-normal text-body-secondary">(1 risque)</small>', html)
+        self.assertIn("Risques non classés ailleurs.", html)
+        self.assertNotIn("Risque routier", html)        # catégorie sans risque : non listée
+
     def test_anciennes_archives_sans_indicateur_restent_lisibles(self):
         ancienne = [{"nom": "U", "effectif": 1, "description": "", "risques": [{
             "categorie": "Autre", "danger": "Ancien danger", "situation": "", "gravite": 2, "frequence": 2, "cotation": 4, "niveau": "moyen",

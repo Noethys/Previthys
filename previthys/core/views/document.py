@@ -7,7 +7,7 @@ from django.http import Http404
 from django.utils import timezone
 from django.views.generic import TemplateView
 
-from core.models import CategorieAction, VersionDuerp
+from core.models import CategorieAction, CategorieRisque, VersionDuerp
 from core.utils import construire_donnees, construire_mesures_generales, filtre_structure, normaliser_donnees
 from core.utils.donnees import avec_macaron
 from core.utils.introduction import introduction_pour, methode, mise_en_forme
@@ -35,7 +35,8 @@ class Document(Lecture, TemplateView):
             ctx["mesures_generales"] = [avec_macaron(a, reference) for a in construire_mesures_generales(self.request.user)]
             intro = introduction_pour(self.request.user)
         ctx.update({"introduction": intro, "texte_introduction": mise_en_forme(intro.get("texte", "")), "methode": methode(),
-                    "axes": axes_du_plan(ctx["donnees"], ctx["mesures_generales"]), "aujourdhui": timezone.localdate()})
+                    "axes": axes_du_plan(ctx["donnees"], ctx["mesures_generales"]),
+                    "categories_risques": categories_du_document(ctx["donnees"]), "aujourdhui": timezone.localdate()})
         return ctx
 
 
@@ -53,3 +54,15 @@ def axes_du_plan(donnees, mesures_generales):
         comptes[categorie or "Non classées"] = comptes.get(categorie or "Non classées", 0) + 1
     ordre = {c.nom: c.ordre for c in CategorieAction.objects.all()}
     return sorted(comptes.items(), key=lambda x: (ordre.get(x[0], 10 ** 6), x[0]))
+
+
+def categories_du_document(donnees):
+    """Catégories de risques présentes dans le document, avec leur description et leur nombre de risques.
+    Les archives ne conservent que le nom de la catégorie : la description est celle de la catégorie actuelle."""
+    comptes = {}
+    for unite in donnees:
+        for r in unite["risques"]:
+            comptes[r["categorie"]] = comptes.get(r["categorie"], 0) + 1
+    categories = {c.nom: c for c in CategorieRisque.objects.filter(nom__in=comptes)}
+    lignes = [(nom, categories[nom].description if nom in categories else "", n) for nom, n in comptes.items()]
+    return sorted(lignes, key=lambda x: (categories[x[0]].ordre if x[0] in categories else 10 ** 6, x[0]))
