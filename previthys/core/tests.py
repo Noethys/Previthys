@@ -271,6 +271,15 @@ class MesuresRealiseesTests(BaseTest):
         self.assertIn("Risques non classés ailleurs.", html)
         self.assertNotIn("Risque routier", html)        # catégorie sans risque : non listée
 
+    def test_liste_des_risques_mesures_puis_actions_par_statut(self):
+        ActionPrevention.objects.create(risque=self.risque, description="Action en retard", statut="a_faire", echeance=datetime.date(2020, 1, 1))
+        ActionPrevention.objects.create(risque=self.risque, description="Action en cours", statut="en_cours")
+        html = self.client.get(reverse("risques_liste")).content.decode()
+        self.assertIn("Mesures et actions de prévention", html)
+        self.assertIn('<span class="badge text-bg-info">Existante</span> <span class="texte-action">Échelles contrôlées.</span>', html)
+        ordre = [html.index(t) for t in ("Échelles contrôlées.", "Échelles remplacées", "Action en cours", "Action en retard", "Formation gestes et postures")]
+        self.assertEqual(ordre, sorted(ordre))   # existantes, puis terminées, en cours, en retard, à faire
+
     def test_anciennes_archives_sans_indicateur_restent_lisibles(self):
         ancienne = [{"nom": "U", "effectif": 1, "description": "", "risques": [{
             "categorie": "Autre", "danger": "Ancien danger", "situation": "", "gravite": 2, "frequence": 2, "cotation": 4, "niveau": "moyen",

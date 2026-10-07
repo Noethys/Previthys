@@ -13,6 +13,7 @@ from core.forms.actions import FormulaireActionRisque
 from core.forms.risques import FormulaireRisque
 from core.models import NOTE_COTATION, SEUIL_CRITIQUE, SEUIL_MOYEN, ActionPrevention, CategorieRisque, PieceJointe, Risque, UniteTravail, actions_propres
 from core.utils import filtre_actions, filtre_structure
+from core.utils.donnees import ORDRE_MACARONS, mesures_en_liste
 from core.utils import tableau_de_bord as tdb
 from core.utils.journal import consigner
 from core.views import crud
@@ -31,17 +32,30 @@ def badge_statut(action):
     return format_html('<span class="badge text-bg-{}">{}</span>', couleur, action.get_statut_display())
 
 
-def liste_actions(risque):
-    """Cellule « Actions de prévention » de la liste des risques : une ligne par action, avec son statut.
-    La description est envoyée en entier : la coupure à deux lignes est faite à l'affichage (CSS), selon la largeur
+def code_macaron(action):
+    """Statut affiché d'une action, avec les mêmes codes que le document unique (pour le tri)."""
+    if action.statut == "terminee":
+        return "terminee"
+    return "retard" if action.en_retard else action.statut
+
+
+def liste_mesures_actions(risque):
+    """Cellule « Mesures et actions de prévention » de la liste des risques, comme dans le document unique :
+    les mesures existantes (macaron « Existante »), puis les actions classées par statut (terminées, en cours,
+    en retard, à faire). Retourne (html, nombre de lignes) ; le nombre sert au tri de la colonne.
+    Le texte est envoyé en entier : la coupure à deux lignes est faite à l'affichage (CSS), selon la largeur
     réelle de la colonne, et le texte complet apparaît au survol quand il est coupé (voir core/listes.js)."""
-    actions = list(risque.actions.all())
-    if not actions:
-        return format_html('<span class="text-body-secondary">Aucune</span>')
-    return format_html('<ul class="list-unstyled mb-0 liste-actions">{}</ul>', format_html_join(
-        "", '<li class="ligne-action" data-infobulle="{}">{} <span class="texte-action">{}</span>{}</li>',
-        ((a.description, badge_statut(a), a.description,
-          format_html(' <small class="text-body-secondary">(commune)</small>') if a.est_commune else "") for a in actions)))
+    mesures = mesures_en_liste(risque.mesures_existantes)
+    actions = sorted(risque.actions.all(), key=lambda a: ORDRE_MACARONS.index(code_macaron(a)))
+    if not mesures and not actions:
+        return format_html('<span class="text-body-secondary">Aucune</span>'), 0
+    lignes = [format_html('<li class="ligne-action" data-infobulle="{}"><span class="badge text-bg-info">Existante</span> '
+                          '<span class="texte-action">{}</span></li>', m, m) for m in mesures]
+    lignes += [format_html('<li class="ligne-action" data-infobulle="{}">{} <span class="texte-action">{}</span>{}</li>',
+                           a.description, badge_statut(a), a.description,
+                           format_html(' <small class="text-body-secondary">(commune)</small>') if a.est_commune else "")
+               for a in actions]
+    return format_html('<ul class="list-unstyled mb-0 liste-actions">{}</ul>', format_html_join("", "{}", ((l,) for l in lignes))), len(lignes)
 
 
 class AjoutPiecesJointes:
@@ -60,9 +74,9 @@ class Liste(crud.Liste):
     model = Risque
     titre = "Risques"
     description = NOTE_COTATION
-    colonnes = ["ID", "Unité", "Danger", "Catégorie", "Fréquence", "Gravité", "Maîtrise", "Niveau", "Actions de prévention", "Fichiers"]
+    colonnes = ["ID", "Unité", "Danger", "Catégorie", "Fréquence", "Gravité", "Maîtrise", "Niveau", "Mesures et actions de prévention", "Fichiers"]
     colonnes_masquees = ["Fréquence", "Gravité", "Maîtrise"]   # la cotation reste visible dans la colonne Niveau
-    largeurs_colonnes = {"Danger": "16%", "Actions de prévention": "34%"}   # plus de place pour les actions
+    largeurs_colonnes = {"Danger": "16%", "Mesures et actions de prévention": "34%"}   # plus de place pour les mesures et actions
     ordre = "7,desc"
     memoriser_filtres = True
     url_ajouter, url_modifier, url_supprimer = "risques_ajouter", "risques_modifier", "risques_supprimer"
@@ -170,7 +184,7 @@ class Liste(crud.Liste):
         return [{"titre": "Filtre", "boutons": [{"libelle": " · ".join(actifs) + "  ✕", "nombre": n, "actif": True, "url": url}]}]
 
     def cellules(self, o):
-        return [o.pk, o.unite.nom, o.danger, o.categorie.nom, o.frequence, o.gravite, o.maitrise, (badge_niveau(o), o.cotation), (liste_actions(o), len(o.actions.all())), o.nbre_pieces_jointes]
+        return [o.pk, o.unite.nom, o.danger, o.categorie.nom, o.frequence, o.gravite, o.maitrise, (badge_niveau(o), o.cotation), liste_mesures_actions(o), o.nbre_pieces_jointes]
 
 
 class Ajouter(AjoutPiecesJointes, crud.Ajouter):

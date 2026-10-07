@@ -61,6 +61,11 @@ MACARONS = {"terminee": ("Terminée", "success"), "en_cours": ("En cours", "prim
 ORDRE_MACARONS = ["terminee", "en_cours", "retard", "a_faire"]
 
 
+def mesures_en_liste(texte):
+    """Mesures existantes saisies sur un risque : une par ligne, sans puce ni ligne vide."""
+    return [l.strip(" •-\t") for l in (texte or "").splitlines() if l.strip(" •-\t")]
+
+
 def macaron(action, date_reference):
     """Statut affiché d'une action (données du document ou d'une archive) : terminée, en cours, en retard ou à faire.
     « En retard » est évalué à la date de référence (date du jour, ou date de la version archivée)."""
@@ -102,7 +107,7 @@ def normaliser_donnees(donnees, date_reference=None):
             risques.append({
                 **r,
                 # Mesures existantes saisies sur le risque : une par ligne (affichées avec le macaron « Existante »)
-                "mesures_liste": [l.strip(" •-\t") for l in (r.get("mesures_existantes") or "").splitlines() if l.strip(" •-\t")],
+                "mesures_liste": mesures_en_liste(r.get("mesures_existantes")),
                 "mesures_realisees": [{"description": a["description"], "date": a.get("date_realisation", ""), "commune": a.get("commune", 0)}
                                       for a in realisees],
                 "actions": prevues,
